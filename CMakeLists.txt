@@ -8,9 +8,6 @@ execute_process(
 
 find_package(nanobind CONFIG REQUIRED)
 
-find_package(TBLIS REQUIRED)
-
-
 include(FetchContent)
 FetchContent_Declare(
   tblis
@@ -21,9 +18,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(tblis)
 
 
-nanobind_add_module(pytblis pytblis.cxx)
+nanobind_add_module(pytblis src/pytblis.cxx)
 set_target_properties(pytblis PROPERTIES CXX_STANDARD 20)
 
-target_link_libraries(pytblis PRIVATE TBLIS::tblis)
 
-install(TARGETS pytblis LIBRARY DESTINATION .)
+if(${SKBUILD})
+  target_link_libraries(pytblis PRIVATE tblis-static)
+  install(TARGETS pytblis LIBRARY DESTINATION .)
+endif()

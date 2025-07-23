@@ -60,11 +60,11 @@ docs = [
 minimum-version = "build-system.requires"
 build-dir = "build/{wheel_tag}"
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
-sdist.include = ["src/pytblis/_version.py"]
+sdist.include = ["src/_version.py"]
 
 
 [tool.setuptools_scm]
-write_to = "src/pytblis/_version.py"
+write_to = "src/_version.py"
 
 
 [tool.cibuildwheel]
