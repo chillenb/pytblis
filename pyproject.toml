@@ -39,13 +39,10 @@ Discussions = "https://github.com/chillenb/pytblis/discussions"
 Changelog = "https://github.com/chillenb/pytblis/releases"
 
 
-[dependency-groups]
-test = [
+[project.optional-dependencies]
+tests = [
   "pytest >=6",
   "pytest-cov >=3",
-]
-dev = [
-  { include-group = "test" },
 ]
 docs = [
   "sphinx>=7.0",
@@ -69,7 +66,7 @@ write_to = "src/_version.py"
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/tests"
-test-extras = ["test"]
+test-extras = ["tests"]
 
 
 [tool.pytest.ini_options]

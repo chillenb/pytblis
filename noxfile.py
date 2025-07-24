@@ -40,7 +40,7 @@ def tests(session: nox.Session) -> None:
     """
     Run the unit and regular tests.
     """
-    test_deps = nox.project.dependency_groups(PROJECT, "test")
+    test_deps = nox.project.dependency_groups(PROJECT, "tests")
     session.install("-e.", *test_deps)
     session.run("pytest", *session.posargs)
 
