@@ -26,8 +26,8 @@ if(NOT TBLIS_FOUND)
   include(FetchContent)
   FetchContent_Declare(
     tblis
-    GIT_REPOSITORY https://github.com/MatthewsResearchGroup/tblis.git
-    GIT_TAG 88b5cc5e610bf608a274a34053883af66da43930
+    GIT_REPOSITORY https://github.com/chillenb/tblis.git
+    GIT_TAG 5873576e8877cc16f1629ac31d4fb101091c7da6
     EXCLUDE_FROM_ALL
   )
   FetchContent_MakeAvailable(tblis)
