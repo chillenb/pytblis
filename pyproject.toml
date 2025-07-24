@@ -68,6 +68,8 @@ write_to = "src/_version.py"
 test-command = "pytest {project}/tests"
 test-extras = ["tests"]
 
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.14"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
