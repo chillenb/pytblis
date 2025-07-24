@@ -58,7 +58,7 @@ jobs:
 
       - uses: pypa/cibuildwheel@v3.0
         env:
-          CMAKE_GENERATOR: Unix Makefiles
+          CMAKE_GENERATOR: "Unix Makefiles"
           CMAKE_BUILD_PARALLEL_LEVEL: 4
 
       - name: Upload wheels
