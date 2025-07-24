@@ -60,6 +60,7 @@ jobs:
         env:
           CMAKE_GENERATOR: "Unix Makefiles"
           CMAKE_BUILD_PARALLEL_LEVEL: 4
+          CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL"
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
