@@ -109,7 +109,7 @@ static void tblis_tensor_free_lenstride(tblis_tensor &tensor) {
   }
 }
 
-NB_MODULE(pytblis, m) {
+NB_MODULE(_pytblis_impl, m) {
   m.doc() = "Python bindings for TBLIS";
   m.def(
       "add",
