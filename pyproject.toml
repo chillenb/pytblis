@@ -65,7 +65,7 @@ write_to = "src/_version.py"
 
 
 [tool.cibuildwheel]
-test-command = "pytest {project}/tests"
+test-command = "pytest pytblis/tests"
 test-extras = ["tests"]
 
 
