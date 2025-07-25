@@ -64,6 +64,7 @@ jobs:
           CMAKE_GENERATOR: "Unix Makefiles"
           CMAKE_BUILD_PARALLEL_LEVEL: 4
           CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL"
+          CIBW_BEFORE_BUILD: "rm -rf build"
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
