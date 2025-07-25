@@ -134,12 +134,13 @@ jobs:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
 
-      - uses: pypa/cibuildwheel@v3.0
+      - uses: pypa/cibuildwheel@v2.23
         env:
           CMAKE_GENERATOR: "Unix Makefiles"
           CMAKE_BUILD_PARALLEL_LEVEL: 4
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
           CIBW_ARCHS: all
+          CIBW_BUILD_VERBOSITY: 1
           CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL CMAKE_ARGS CIBW_BEFORE_BUILD"
           CIBW_BEFORE_BUILD: "rm -rf build"
           CMAKE_ARGS: "-DBLIS_CONFIG_FAMILY=${{ matrix.pytblis_arch }}"
