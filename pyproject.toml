@@ -70,7 +70,7 @@ test-command = "pytest {project}/tests"
 test-extras = ["tests"]
 
 [tool.cibuildwheel.macos.environment]
-MACOSX_DEPLOYMENT_TARGET = "10.14"
+MACOSX_DEPLOYMENT_TARGET = "11.0"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
