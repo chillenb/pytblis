@@ -42,16 +42,91 @@ jobs:
           path: dist/*.tar.gz
 
   build_wheels:
-    name: Wheel on ${{ matrix.os }}
+    name: Wheel on ${{ matrix.os }} for Python ${{ matrix.python }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - ubuntu-24.04-arm
-          - macos-13
-          - macos-latest
+        include:
+          # Linux 64 bit manylinux2014
+          - os: ubuntu-latest
+            python: 310
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+            pytblis_arch: x86_64
+          - os: ubuntu-latest
+            python: 311
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+            pytblis_arch: x86_64
+          - os: ubuntu-latest
+            python: 312
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+            pytblis_arch: x86_64
+          - os: ubuntu-latest
+            python: 313
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+            pytblis_arch: x86_64
+
+          # # Linux 64 bit manylinux2014
+          - os: ubuntu-24.04-arm
+            python: 310
+            platform_id: manylinux_aarch64
+            manylinux_image: manylinux2014
+            pytblis_arch: arm64
+          - os: ubuntu-24.04-arm
+            python: 311
+            platform_id: manylinux_aarch64
+            manylinux_image: manylinux2014
+            pytblis_arch: arm64
+          - os: ubuntu-24.04-arm
+            python: 312
+            platform_id: manylinux_aarch64
+            manylinux_image: manylinux2014
+            pytblis_arch: arm64
+          - os: ubuntu-24.04-arm
+            python: 313
+            platform_id: manylinux_aarch64
+            manylinux_image: manylinux2014
+            pytblis_arch: arm64
+
+          # MacOS x86_64
+          - os: macos-13
+            python: 310
+            platform_id: macosx_x86_64
+            pytblis_arch: x86_64
+          - os: macos-13
+            python: 311
+            platform_id: macosx_x86_64
+            pytblis_arch: x86_64
+          - os: macos-13
+            python: 312
+            platform_id: macosx_x86_64
+            pytblis_arch: x86_64
+          - os: macos-13
+            python: 313
+            platform_id: macosx_x86_64
+            pytblis_arch: x86_64
+
+          # MacOS arm64
+          - os: macos-14
+            python: 310
+            platform_id: macosx_arm64
+            pytblis_arch: arm64
+          - os: macos-14
+            python: 311
+            platform_id: macosx_arm64
+            pytblis_arch: arm64
+          - os: macos-14
+            python: 312
+            platform_id: macosx_arm64
+            pytblis_arch: arm64
+          - os: macos-14
+            python: 313
+            platform_id: macosx_arm64
+            pytblis_arch: arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -63,8 +138,9 @@ jobs:
         env:
           CMAKE_GENERATOR: "Unix Makefiles"
           CMAKE_BUILD_PARALLEL_LEVEL: 4
-          CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL"
+          CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL CMAKE_ARGS CIBW_BEFORE_BUILD"
           CIBW_BEFORE_BUILD: "rm -rf build"
+          CMAKE_ARGS: "-DBLIS_CONFIG_FAMILY=${{ matrix.pytblis_arch }}"
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
