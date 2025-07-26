@@ -54,11 +54,15 @@ jobs:
             platform_id: manylinux_x86_64
             manylinux_image: manylinux_2_28
             pytblis_arch: x86_64
+            c_compiler: gcc
+            cxx_compiler: g++
 
           # MacOS arm64
           - os: macos-latest
             platform_id: macosx_arm64
             pytblis_arch: arm64
+            c_compiler: clang
+            cxx_compiler: clang++
 
     steps:
       - uses: actions/checkout@v4
@@ -67,25 +71,15 @@ jobs:
           submodules: recursive
       - uses: astral-sh/setup-uv@v6
 
-
-      - name: Build TBLIS
-        run: |
-          cmake -S tblis -B tblisbld \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/tblisprefix \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
-            -DBLIS_CONFIG_FAMILY=${{ matrix.pytblis_arch }}
-          cmake --build tblisbld --target install --parallel 8
-
       - uses: pypa/cibuildwheel@v3.1.1
         env:
+          CIBW_BEFORE_ALL: bash {project}/scripts/cibw_before_all.sh {project} ${{ matrix.pytblis_arch }}  ${{ matrix.c_compiler }} ${{ matrix.cxx_compiler }}
           CMAKE_GENERATOR: "Unix Makefiles"
           CMAKE_BUILD_PARALLEL_LEVEL: 8
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
           CIBW_BUILD_VERBOSITY: 1
           CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL CMAKE_ARGS"
-          CMAKE_ARGS: "-DBLIS_CONFIG_FAMILY=${{ matrix.pytblis_arch }} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_PREFIX_PATH=${{ github.workspace }}/tblisprefix"
+          CMAKE_ARGS: "-DBLIS_CONFIG_FAMILY=${{ matrix.pytblis_arch }} -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }} -DCMAKE_PREFIX_PATH=${{ github.workspace }}/tblisprefix"
 
 
       - name: Setup tmate session
