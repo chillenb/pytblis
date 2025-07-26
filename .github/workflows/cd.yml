@@ -92,23 +92,23 @@ jobs:
           #   manylinux_image: manylinux_2_28
           #   pytblis_arch: arm64
 
-          # MacOS x86_64
-          - os: macos-latest
-            python: 310
-            platform_id: macosx_x86_64
-            pytblis_arch: x86_64
-          - os: macos-latest
-            python: 311
-            platform_id: macosx_x86_64
-            pytblis_arch: x86_64
-          - os: macos-latest
-            python: 312
-            platform_id: macosx_x86_64
-            pytblis_arch: x86_64
-          - os: macos-latest
-            python: 313
-            platform_id: macosx_x86_64
-            pytblis_arch: x86_64
+          # # MacOS x86_64
+          # - os: macos-latest
+          #   python: 310
+          #   platform_id: macosx_x86_64
+          #   pytblis_arch: x86_64
+          # - os: macos-latest
+          #   python: 311
+          #   platform_id: macosx_x86_64
+          #   pytblis_arch: x86_64
+          # - os: macos-latest
+          #   python: 312
+          #   platform_id: macosx_x86_64
+          #   pytblis_arch: x86_64
+          # - os: macos-latest
+          #   python: 313
+          #   platform_id: macosx_x86_64
+          #   pytblis_arch: x86_64
 
           # MacOS arm64
           - os: macos-latest
