@@ -143,7 +143,7 @@ jobs:
           CIBW_ARCHS: all
           CIBW_BUILD_VERBOSITY: 1
           CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL CMAKE_ARGS"
-          CMAKE_ARGS: "-DBLIS_CONFIG_FAMILY=${{ matrix.pytblis_arch }};-DCMAKE_C_COMPILER=clang;-DCMAKE_CXX_COMPILER=clang++"
+          CMAKE_ARGS: "-DBLIS_CONFIG_FAMILY=${{ matrix.pytblis_arch }} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
 
 
       - name: Setup tmate session
