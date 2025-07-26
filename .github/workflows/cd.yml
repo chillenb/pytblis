@@ -48,55 +48,56 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux 64 bit manylinux2014
-          - os: ubuntu-latest
-            python: 310
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux2014
-            pytblis_arch: x86_64
-          - os: ubuntu-latest
-            python: 311
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux2014
-            pytblis_arch: x86_64
-          - os: ubuntu-latest
-            python: 312
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux2014
-            pytblis_arch: x86_64
-          - os: ubuntu-latest
-            python: 313
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux2014
-            pytblis_arch: x86_64
+          # Linux 64 bit manylinux_2_28
+          # - os: ubuntu-latest
+          #   python: 310
+          #   platform_id: manylinux_x86_64
+          #   manylinux_image: manylinux_2_28
+          #   pytblis_arch: x86_64
+          # - os: ubuntu-latest
+          #   python: 311
+          #   platform_id: manylinux_x86_64
+          #   manylinux_image: manylinux_2_28
+          #   pytblis_arch: x86_64
+          # - os: ubuntu-latest
+          #   python: 312
+          #   platform_id: manylinux_x86_64
+          #   manylinux_image: manylinux_2_28
+          #   pytblis_arch: x86_64
+          # - os: ubuntu-latest
+          #   python: 313
+          #   platform_id: manylinux_x86_64
+          #   manylinux_image: manylinux_2_28
+          #   pytblis_arch: x86_64
 
-          # # Linux 64 bit manylinux2014
-          - os: ubuntu-24.04-arm
-            python: 310
-            platform_id: manylinux_aarch64
-            manylinux_image: manylinux2014
-            pytblis_arch: arm64
-          - os: ubuntu-24.04-arm
-            python: 311
-            platform_id: manylinux_aarch64
-            manylinux_image: manylinux2014
-            pytblis_arch: arm64
-          - os: ubuntu-24.04-arm
-            python: 312
-            platform_id: manylinux_aarch64
-            manylinux_image: manylinux2014
-            pytblis_arch: arm64
-          - os: ubuntu-24.04-arm
-            python: 313
-            platform_id: manylinux_aarch64
-            manylinux_image: manylinux2014
-            pytblis_arch: arm64
+          # # # Linux 64 bit manylinux_2_28
+          # - os: ubuntu-24.04-arm
+          #   python: 310
+          #   platform_id: manylinux_aarch64
+          #   manylinux_image: manylinux_2_28
+          #   pytblis_arch: arm64
+          # - os: ubuntu-24.04-arm
+          #   python: 311
+          #   platform_id: manylinux_aarch64
+          #   manylinux_image: manylinux_2_28
+          #   pytblis_arch: arm64
+          # - os: ubuntu-24.04-arm
+          #   python: 312
+          #   platform_id: manylinux_aarch64
+          #   manylinux_image: manylinux_2_28
+          #   pytblis_arch: arm64
+          # - os: ubuntu-24.04-arm
+          #   python: 313
+          #   platform_id: manylinux_aarch64
+          #   manylinux_image: manylinux_2_28
+          #   pytblis_arch: arm64
 
           # MacOS x86_64
           - os: macos-13
             python: 310
             platform_id: macosx_x86_64
             pytblis_arch: x86_64
+            
           - os: macos-13
             python: 311
             platform_id: macosx_x86_64
@@ -137,13 +138,13 @@ jobs:
       - uses: pypa/cibuildwheel@v2.23
         env:
           CMAKE_GENERATOR: "Unix Makefiles"
-          CMAKE_BUILD_PARALLEL_LEVEL: 4
+          CMAKE_BUILD_PARALLEL_LEVEL: 8
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
           CIBW_ARCHS: all
           CIBW_BUILD_VERBOSITY: 1
-          CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL CMAKE_ARGS CIBW_BEFORE_BUILD"
-          CIBW_BEFORE_BUILD: "rm -rf build"
-          CMAKE_ARGS: "-DBLIS_CONFIG_FAMILY=${{ matrix.pytblis_arch }}"
+          CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL CMAKE_ARGS"
+          CMAKE_ARGS: "-DBLIS_CONFIG_FAMILY=${{ matrix.pytblis_arch }};-DCMAKE_C_COMPILER=clang;-DCMAKE_CXX_COMPILER=clang++"
+
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
