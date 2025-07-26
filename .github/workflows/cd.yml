@@ -93,38 +93,37 @@ jobs:
           #   pytblis_arch: arm64
 
           # MacOS x86_64
-          - os: macos-13
+          - os: macos-latest
             python: 310
             platform_id: macosx_x86_64
             pytblis_arch: x86_64
-            
-          - os: macos-13
+          - os: macos-latest
             python: 311
             platform_id: macosx_x86_64
             pytblis_arch: x86_64
-          - os: macos-13
+          - os: macos-latest
             python: 312
             platform_id: macosx_x86_64
             pytblis_arch: x86_64
-          - os: macos-13
+          - os: macos-latest
             python: 313
             platform_id: macosx_x86_64
             pytblis_arch: x86_64
 
           # MacOS arm64
-          - os: macos-14
+          - os: macos-latest
             python: 310
             platform_id: macosx_arm64
             pytblis_arch: arm64
-          - os: macos-14
+          - os: macos-latest
             python: 311
             platform_id: macosx_arm64
             pytblis_arch: arm64
-          - os: macos-14
+          - os: macos-latest
             python: 312
             platform_id: macosx_arm64
             pytblis_arch: arm64
-          - os: macos-14
+          - os: macos-latest
             python: 313
             platform_id: macosx_arm64
             pytblis_arch: arm64
@@ -135,7 +134,7 @@ jobs:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
 
-      - uses: pypa/cibuildwheel@v2.23
+      - uses: pypa/cibuildwheel@v3.1.1
         env:
           CMAKE_GENERATOR: "Unix Makefiles"
           CMAKE_BUILD_PARALLEL_LEVEL: 8
