@@ -12,4 +12,5 @@ cmake -S tblis -B tblisbld \
   -DCMAKE_C_COMPILER=${C_COMPILER} \
   -DCMAKE_CXX_COMPILER=${CXX_COMPILER} \
   -DBLIS_CONFIG_FAMILY=${PYTBLIS_ARCH}
-cmake --build tblisbld --target install --parallel 8
+cmake --build tblisbld --parallel 8
+cmake --install tblisbld
