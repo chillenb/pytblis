@@ -14,3 +14,5 @@ cmake -S tblis -B tblisbld \
   -DBLIS_CONFIG_FAMILY=${PYTBLIS_ARCH}
 cmake --build tblisbld --parallel 8
 cmake --install tblisbld
+
+export CMAKE_PREFIX_PATH=${PROJECT_DIR}/tblisprefix
