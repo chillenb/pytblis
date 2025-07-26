@@ -27,7 +27,7 @@ if(NOT TBLIS_FOUND)
   FetchContent_Declare(
     tblis
     GIT_REPOSITORY https://github.com/chillenb/tblis.git
-    GIT_TAG 38f7a4a06f04c416e4c7ddac69fe6969cf4dac32
+    GIT_TAG b16a732939d8454021e0a0f0097cf1cc1dd3ab19
     EXCLUDE_FROM_ALL
   )
   FetchContent_MakeAvailable(tblis)
