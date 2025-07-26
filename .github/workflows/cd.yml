@@ -53,7 +53,16 @@ jobs:
             python: 310
             platform_id: manylinux_x86_64
             manylinux_image: manylinux_2_28
-            pytblis_arch: generic
+            pytblis_arch: x86_64
+            c_compiler: gcc
+            cxx_compiler: g++
+            tblis_install_prefix: /usr
+
+          - os: ubuntu-24.04-arm
+            python: 310
+            platform_id: manylinux_aarch64
+            manylinux_image: manylinux_2_28
+            pytblis_arch: arm64
             c_compiler: gcc
             cxx_compiler: g++
             tblis_install_prefix: /usr
@@ -61,7 +70,7 @@ jobs:
           # MacOS arm64
           - os: macos-latest
             platform_id: macosx_arm64
-            pytblis_arch: generic
+            pytblis_arch: arm64
             c_compiler: clang
             cxx_compiler: clang++
             tblis_install_prefix: tblisprefix
@@ -78,7 +87,7 @@ jobs:
           CIBW_BEFORE_ALL: bash {project}/scripts/cibw_before_all.sh ${{ matrix.tblis_install_prefix }} ${{ matrix.pytblis_arch }}  ${{ matrix.c_compiler }} ${{ matrix.cxx_compiler }}
           CMAKE_GENERATOR: "Unix Makefiles"
           CMAKE_BUILD_PARALLEL_LEVEL: 8
-          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+          CIBW_BUILD: "cp310-${{ matrix.platform_id }} cp311-${{ matrix.platform_id }} cp312-${{ matrix.platform_id }} cp313-${{ matrix.platform_id }}"
           CIBW_BUILD_VERBOSITY: 2
           CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL"
           CMAKE_PREFIX_PATH: ${{ matrix.tblis_install_prefix }}
