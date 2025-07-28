@@ -30,7 +30,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dynamic = ["version"]
-dependencies = []
+dependencies = ["numpy"]
 
 [project.urls]
 Homepage = "https://github.com/chillenb/pytblis"
@@ -86,6 +86,7 @@ testpaths = [
 
 
 [tool.ruff]
+line-length = 120
 
 [tool.ruff.lint]
 extend-select = [

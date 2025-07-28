@@ -159,3 +159,9 @@ Thumbs.db
 
 # version file
 src/_version.py
+
+# vscode
+.vscode/
+
+# miscellaneous
+scripts/conj.py

@@ -13,7 +13,7 @@ using namespace tblis;
 
 static nb::dlpack::dtype get_nb_dtype_from_tblis_type(type_t type) {
   switch (type) {
-  case TYPE_FLOAT:
+  case TYPE_SINGLE:
     return nb::dtype<float>();
   case TYPE_DOUBLE:
     return nb::dtype<double>();
@@ -30,7 +30,7 @@ static nb::dlpack::dtype get_nb_dtype_from_tblis_type(type_t type) {
 // Necessary because nanobind can't bind templates.
 static nb::object pyobj_from_tblis_scalar(const tblis_scalar &scalar) {
   switch (scalar.type) {
-  case TYPE_FLOAT:
+  case TYPE_SINGLE:
     return nb::float_((double)scalar.data.s);
   case TYPE_DOUBLE:
     return nb::float_(PyFloat_FromDouble(scalar.data.d));
@@ -66,35 +66,26 @@ static tblis_tensor ndarray_to_scaled_tblis_tensor(const nb::ndarray<> &arr,
 
   nb::dlpack::dtype dtype = arr.dtype();
   if (dtype == nb::dtype<float>()) {
-    tensor.type = TYPE_FLOAT;
-    tblis_init_scalar_s(&tensor.scalar, scalar.real());
+    tblis_init_tensor_scaled_s(&tensor, scalar.real(), arr.ndim(), len, (float*) arr.data(), stride);
     if (scalar.imag() != 0.0f) {
       throw std::runtime_error(
           "Imaginary part of scalar not supported for float type");
     }
   } else if (dtype == nb::dtype<double>()) {
-    tensor.type = TYPE_DOUBLE;
-    tblis_init_scalar_d(&tensor.scalar, scalar.real());
+    tblis_init_tensor_scaled_d(&tensor, scalar.real(), arr.ndim(), len, (double*)arr.data(), stride);
     if (scalar.imag() != 0.0) {
       throw std::runtime_error(
           "Imaginary part of scalar not supported for double type");
     }
   } else if (dtype == nb::dtype<scomplex>()) {
-    tensor.type = TYPE_SCOMPLEX;
-    tblis_init_scalar_c(&tensor.scalar, scomplex(scalar.real(), scalar.imag()));
+    tblis_init_tensor_scaled_c(&tensor, scomplex(scalar.real(), scalar.imag()), arr.ndim(), len, (scomplex*) arr.data(), stride);
   } else if (dtype == nb::dtype<dcomplex>()) {
-    tensor.type = TYPE_DCOMPLEX;
-    tblis_init_scalar_z(&tensor.scalar, dcomplex(scalar.real(), scalar.imag()));
+    tblis_init_tensor_scaled_z(&tensor, dcomplex(scalar.real(), scalar.imag()), arr.ndim(), len, (dcomplex*) arr.data(), stride);
   } else {
     throw std::runtime_error("Unsupported dlpack scalar type. Supported types are float, double, scomplex, and dcomplex.");
   }
 
-  tensor.ndim = arr.ndim();
-  tensor.data = arr.data();
   tensor.conj = conj ? 1 : 0;
-
-  tensor.len = len;
-  tensor.stride = stride;
   return tensor;
 }
 
@@ -112,7 +103,7 @@ static void tblis_tensor_free_lenstride(tblis_tensor &tensor) {
 NB_MODULE(_pytblis_impl, m) {
   m.doc() = "Python bindings for TBLIS";
   m.def(
-      "add",
+      "_add",
       [](const nb::ndarray<> &A, nb::ndarray<> &B, std::string idx_A,
          std::string idx_B, dcomplex alpha = 1.0, dcomplex beta = 1.0,
          bool conja = false, bool conjb = false) {
@@ -128,10 +119,36 @@ NB_MODULE(_pytblis_impl, m) {
       nb::arg("A"), nb::arg("B"), nb::arg("idx_A"), nb::arg("idx_B"),
       nb::arg("alpha") = 1.0, nb::arg("beta") = 1.0, nb::arg("conja") = false,
       nb::arg("conjb") = false,
-      "B_[idx_B] = alpha * A_[idx_A] + beta * B_[idx_B]");
+      "Performs the operation B[idx_B] := alpha * A[idx_A] + beta * B[idx_B]. \n"
+      "Equivalent to the einsum operation B = alpha * einsum(f'{idx_A}->{idx_B}', A) + beta * B.\n"
+      "The tensors A and B must have the same type and compatible shapes.\n"
+      "\n"
+      "Parameters\n"
+      "----------\n"
+      "A : ndarray\n"
+      "    Tensor A (not overwritten).\n"
+      "B : ndarray\n"
+      "    Tensor B (overwritten).\n"
+      "idx_A : str\n"
+      "    Indices for tensor A.\n"
+      "idx_B : str\n"
+      "    Indices for tensor B.\n"
+      "alpha : scalar, optional\n"
+      "    Scalar multiplier for A (default is 1.0).\n"
+      "beta : scalar, optional\n"
+      "    Scalar multiplier for B (default is 1.0).\n"
+      "conja : bool, optional\n"
+      "    If True, conjugate tensor A (default is False); alpha is not conjugated.\n"
+      "conjb : bool, optional\n"
+      "    If True, conjugate tensor B (default is False); beta is not conjugated.\n"
+      "\n"
+      "Returns\n"
+      "-------\n"
+      "None\n"
+    );
 
   m.def(
-      "dot",
+      "_dot",
       [](const nb::ndarray<> &A, const nb::ndarray<> &B, const std::string &idx_A,
          const std::string &idx_B, dcomplex alpha = 1.0, dcomplex beta = 1.0,
          bool conja = false, bool conjb = false) {
@@ -153,7 +170,33 @@ NB_MODULE(_pytblis_impl, m) {
       nb::arg("A"), nb::arg("B"), nb::arg("idx_A"), nb::arg("idx_B"),
       nb::arg("alpha") = 1.0, nb::arg("beta") = 1.0, nb::arg("conja") = false,
       nb::arg("conjb") = false,
-      "result = alpha * A_[idx_A] . beta * B_[idx_B]");
+      "Computes the dot product of tensors A and B.\n"
+      "The result is a scalar value, equal to alpha * beta * einsum(f'{idx_A},{idx_B}')->''.\n"
+      "\n"
+      "Parameters\n"
+      "----------\n"
+      "A : ndarray\n"
+      "    Tensor A (not overwritten).\n"
+      "B : ndarray\n"
+      "    Tensor B (not overwritten).\n"
+      "idx_A : str\n"
+      "    Indices for tensor A.\n"
+      "idx_B : str\n"
+      "    Indices for tensor B.\n"
+      "alpha : scalar, optional\n"
+      "    Scalar multiplier for A (default is 1.0).\n"
+      "beta : scalar, optional\n"
+      "    Scalar multiplier for B (default is 1.0).\n"
+      "conja : bool, optional\n"
+      "    If True, conjugate tensor A (default is False); alpha is not conjugated.\n"
+      "conjb : bool, optional\n"
+      "    If True, conjugate tensor B (default is False); beta is not conjugated.\n"
+      "\n"
+      "Returns\n"
+      "-------\n"
+      "scalar\n"
+      "    alpha * A[idx_A] dot beta * B[idx_B]\n"
+    );
 
   nb::enum_<reduce_t>(m, "reduce_t")
       .value("REDUCE_SUM", REDUCE_SUM)
@@ -168,11 +211,11 @@ NB_MODULE(_pytblis_impl, m) {
       .export_values();
 
   m.def(
-      "mult",
+      "_mult",
       [](const nb::ndarray<> &A, const nb::ndarray<> &B, nb::ndarray<> &C,
          const std::string &idx_A, const std::string &idx_B,
          const std::string &idx_C, dcomplex alpha = 1.0,
-         dcomplex beta = 1.0, bool conja = false, bool conjb = false) {
+         dcomplex beta = 0.0, bool conja = false, bool conjb = false) {
         // alpha is the product of the scalars of A and B
         // beta is the scalar of C
         tblis_tensor a = ndarray_to_scaled_tblis_tensor(A, alpha, conja);
@@ -189,11 +232,42 @@ NB_MODULE(_pytblis_impl, m) {
       },
       nb::arg("A"), nb::arg("B"), nb::arg("C"), nb::arg("idx_A"),
       nb::arg("idx_B"), nb::arg("idx_C"), nb::arg("alpha") = 1.0,
-      nb::arg("beta") = 1.0, nb::arg("conja") = false, nb::arg("conjb") = false,
-      "C_[idx_C] = alpha * A_[idx_A] * B_[idx_B] + beta * C_[idx_C]");
+      nb::arg("beta") = 0.0, nb::arg("conja") = false, nb::arg("conjb") = false,
+      "Generalized tensor multiplication.\n"
+      "Computes C[idx_C] = alpha * A[idx_A] * B[idx_B] + beta * C[idx_C].\n"
+      "Equivalent to the einsum operation C = alpha * einsum(f'{idx_A},{idx_B}->{idx_C}', A, B) + beta * C.\n"
+      "The tensors A, B, and C must have the same type and compatible shapes.\n"
+      "\n"
+      "Parameters\n"
+      "----------\n"
+      "A : ndarray\n"
+      "    Tensor A (not overwritten).\n"
+      "B : ndarray\n"
+      "    Tensor B (not overwritten).\n"
+      "C : ndarray\n"
+      "    Tensor C (overwritten).\n"
+      "idx_A : str\n"
+      "    Indices for tensor A.\n"
+      "idx_B : str\n"
+      "    Indices for tensor B.\n"
+      "idx_C : str\n"
+      "    Indices for tensor C.\n"
+      "alpha : scalar, optional\n"
+      "    Scalar multiplier for A and B (default is 1.0).\n"
+      "beta : scalar, optional\n"
+      "    Scalar multiplier for C (default is 0.0).\n"
+      "conja : bool, optional\n"
+      "    If True, conjugate tensor A (default is False); alpha is not conjugated.\n"
+      "conjb : bool, optional\n"
+      "    If True, conjugate tensor B (default is False); beta is not conjugated.\n"
+      "\n"
+      "Returns\n"
+      "-------\n"
+      "None\n"
+    );
 
   m.def(
-      "shift",
+      "_shift",
       [](nb::ndarray<> &A, const std::string &idx_A, const dcomplex alpha = 1.0,
          const dcomplex beta = 0.0) {
         // beta is passed to tblis_tensor_shift as the scalar of A
@@ -210,7 +284,7 @@ NB_MODULE(_pytblis_impl, m) {
       nb::arg("beta") = 1.0, "A_[idx_A] = alpha + beta * A_[idx_A]");
 
   m.def(
-      "reduce",
+      "_reduce",
       [](const nb::ndarray<> &A, const std::string &idx_A, reduce_t op,
          bool conja = false) -> nb::object {
         tblis_tensor a = ndarray_to_scaled_tblis_tensor(A, 1.0, false);
@@ -229,5 +303,27 @@ NB_MODULE(_pytblis_impl, m) {
         }
       },
       nb::arg("A"), nb::arg("idx_A"), nb::arg("op"), nb::arg("conja") = false,
-      "Reduce A_[idx_A] using reduction operator op.");
+      "Tensor reduction operation.\n"
+      "Computes the reduction of tensor A over indices idx_A using the operation op.\n"
+      "The result is a scalar value or a tuple (scalar, index) if the operation returns an index.\n"
+      "\n"
+      "Parameters\n"
+      "----------\n"
+      "A : ndarray\n"
+      "    Tensor A (not overwritten).\n"
+      "idx_A : str\n"
+      "    Indices for tensor A.\n"
+      "op : pytblis.reduce_t\n"
+      "    Reduction operation to perform.\n"
+      "conja : bool, optional\n"
+      "    If True, conjugate tensor A (default is False); the scalar is not conjugated.\n"
+      "\n"
+      "Returns\n"
+      "-------\n"
+      "scalar or tuple\n"
+      "    The result of the reduction operation. If the operation returns an index, a tuple\n"
+      "    (scalar, index) is returned, where scalar is the result of the reduction operation\n"
+      "    and index is the index of the maximum or minimum value in the tensor A.\n"
+      "    Otherwise, just the scalar result is returned.\n"
+    );
 }
