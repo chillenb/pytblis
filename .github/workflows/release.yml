@@ -1,4 +1,4 @@
-name: wheels
+name: release
 
 on:
   workflow_dispatch:
@@ -16,10 +16,6 @@ on:
   pull_request:
     paths:
       - .github/workflows/cd.yml
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
   # Many color libraries just need this to be set to any value, but at least
