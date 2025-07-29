@@ -239,3 +239,22 @@ def test_einsum(string, dtype):
     tblis_result = pytblis.einsum(string, *views)
     numpy_result = np.einsum(string, *views)
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+single_array_tests = [
+    "ea", "fb", "abcd", "gc", "hd", "efgh",
+    "acdf", "jbje", "gihb", "hfac", "gfac", "gifabc", "hfac"
+]
+
+
+@pytest.mark.parametrize("string", single_array_tests)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_ascontiguousarray(string, dtype):
+    rng = np.random.default_rng(0)
+    views = build_views(string, dtype=dtype)
+    arr = views[0]
+
+    arr = np.transpose(arr, axes=rng.permutation(len(arr.shape)))
+    tblis_result = pytblis.ascontiguousarray(arr)
+    numpy_result = np.ascontiguousarray(arr)
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"

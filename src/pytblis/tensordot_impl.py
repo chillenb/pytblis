@@ -36,8 +36,7 @@ import numpy as np
 
 from ._pytblis_impl import _mult
 
-_valid_labels = list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
+from .typecheck import _valid_labels, _check_strides, _check_tblis_types, _accepted_types
 
 def tensordot(a, b, axes=2):
     """
@@ -114,7 +113,7 @@ def tensordot(a, b, axes=2):
         )
         return np.tensordot(a, b, axes=axes)
 
-    if a.dtype.type not in (np.float32, np.float64, np.complex64, np.complex128):
+    if a.dtype.type not in _accepted_types:
         warnings.warn(
             "TBLIS only supports float32, float64, complex64, and complex128. Falling back to numpy tensordot.", stacklevel=2
         )

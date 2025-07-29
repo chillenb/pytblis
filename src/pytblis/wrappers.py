@@ -2,24 +2,8 @@ import warnings
 
 import numpy as np
 
-from ._pytblis_impl import _mult
-
-
-def _check_tblis_types(*tensors):
-    """
-    Returns the scalar type if all tensors have the same datatype, and this datatype is
-    one of the supported types (float, double, complex float, complex double).
-    Otherwise return None.
-    """
-    ok_types = (np.float32, np.float64, np.complex64, np.complex128)
-    if len(tensors) == 0:
-        return None
-    first_type = tensors[0].dtype.type
-    for tensor in tensors:
-        if tensor.dtype.type != first_type or tensor.dtype.type not in ok_types:
-            return None
-    return first_type
-
+from ._pytblis_impl import _mult, _add
+from .typecheck import _check_strides, _check_tblis_types, _valid_labels, _accepted_types
 
 def contract(subscripts, a, b, alpha=1.0, beta=0.0, out=None, conja=False, conjb=False):
     """
@@ -54,14 +38,22 @@ def contract(subscripts, a, b, alpha=1.0, beta=0.0, out=None, conja=False, conjb
     a = np.asarray(a)
     b = np.asarray(b)
     scalar_type = _check_tblis_types(a, b, out) if out is not None else _check_tblis_types(a, b)
-    if scalar_type is None:
-        warnings.warn(
-            "TBLIS only supports float32, float64, complex64, and complex128. "
-            "Types do not match or unsupported type detected. "
-            "Falling back to numpy tensordot.", stacklevel=2
-        )
+    strides_ok = _check_strides(a, b, out) if out is not None else _check_strides(a, b)
+
+    if scalar_type is None or not strides_ok:
+        if scalar_type is None:
+            warnings.warn(
+                "TBLIS only supports float32, float64, complex64, and complex128. "
+                "Types do not match or unsupported type detected. "
+                "Will attempt to fall back to numpy tensordot.", stacklevel=2
+            )
+        if not strides_ok:
+            warnings.warn(
+                "Input tensor has non-positive strides. "
+                "Will attempt to fall back to numpy tensordot.", stacklevel=2
+            )
         if alpha != 1.0 or beta != 0.0:
-            msg = "Cannot fall back to numpy tensordot with non-default alpha or beta."
+            msg = "Cannot fall back to numpy tensordot unless alpha = 1.0 and beta = 0.0"
             raise ValueError(msg)
         return np.einsum(subscripts, a, b, alpha=alpha, beta=beta, out=out)
 
@@ -90,4 +82,42 @@ def contract(subscripts, a, b, alpha=1.0, beta=0.0, out=None, conja=False, conjb
         raise ValueError(msg)
 
     _mult(a, b, out, a_idx, b_idx, c_idx, alpha=alpha, beta=beta, conja=conja, conjb=conjb)
+    return out
+
+
+def ascontiguousarray(a):
+    """Parallel transpose the input to C-contiguous layout.
+
+    Parameters
+    ----------
+    a : array_like
+        Input array.
+
+    Returns
+    -------
+    ndarray
+        Contiguous array.
+    """
+    a = np.asarray(a)
+
+    if not _check_strides(a):
+        warnings.warn(
+            "Input tensor has non-positive strides. Falling back to numpy ascontiguousarray.",
+            stacklevel=2
+        )
+        return np.ascontiguousarray(a)
+
+    if a.flags.c_contiguous:
+        return a
+    if a.dtype.type not in _accepted_types:
+        warnings.warn(
+            "TBLIS only supports float32, float64, complex64, and complex128. "
+            "Falling back to numpy ascontiguousarray.", stacklevel=2
+        )
+        return np.ascontiguousarray(a)
+    out = np.empty(a.shape, dtype=a.dtype, order='C')
+    assert len(a.shape) < len(_valid_labels), f"a.ndim is {len(a.shape)}, but only {len(_valid_labels)} labels are valid."
+    a_inds = _valid_labels[:len(a.shape)]
+    a_inds = "".join(a_inds)
+    _add(a, out, a_inds, a_inds, alpha=1.0, beta=0.0)
     return out

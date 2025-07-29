@@ -67,7 +67,7 @@ def einsum(*operands, out=None, optimize='greedy', **kwargs):
     # repeat default values here
     valid_einsum_kwargs = ["order"]
     unknown_kwargs = [k for (k, v) in kwargs.items() if k not in valid_einsum_kwargs]
-    if len(unknown_kwargs):
+    if unknown_kwargs:
         msg = f"Did not understand the following kwargs: {unknown_kwargs}"
         raise TypeError(msg)
 
@@ -94,7 +94,7 @@ def einsum(*operands, out=None, optimize='greedy', **kwargs):
 
         else:
             # fallback to numpy einsum
-            # todo: handle these contractions more efficiently
+            # todo: make non-binary contractions more expensive in the cost function.
             out_kwarg = None
             if handle_out:
                 out_kwarg = out
