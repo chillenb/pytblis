@@ -105,7 +105,7 @@ jobs:
 
   upload_all:
     needs: [build_wheels, make_sdist]
-    environment: pypi
+    environment: testpypi
     permissions:
       id-token: write
       attestations: write
