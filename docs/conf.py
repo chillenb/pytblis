@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib.metadata
 from typing import Any
 
+from intersphinx_registry import get_intersphinx_mapping
+
 project = "pytblis"
 copyright = "2025, Christopher Hillenbrand"
 author = "Christopher Hillenbrand"
@@ -11,9 +13,12 @@ version = release = importlib.metadata.version("pytblis")
 extensions = [
     "myst_parser",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
+    "numpydoc",
+    "sphinx.ext.viewcode",
     "sphinx_autodoc_typehints",
     "sphinx_copybutton",
 ]
@@ -52,9 +57,16 @@ myst_enable_extensions = [
     "colon_fence",
 ]
 
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-}
+html_use_modindex = True
+autosummary_generate = True
+
+default_role = "autolink"
+
+numpydoc_xref_param_type = True
+numpydoc_xref_ignore = "all"
+numpydoc_validation_checks = {"all", "GL01", "SA04", "RT03"}
+
+intersphinx_mapping = get_intersphinx_mapping(packages=["python", "numpy"])
 
 nitpick_ignore = [
     ("py:class", "_io.StringIO"),

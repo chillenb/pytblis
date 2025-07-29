@@ -9,21 +9,19 @@ execute_process(
 
 find_package(nanobind CONFIG REQUIRED)
 
-option(PYTBLIS_PYPI_BUILD "Assume we're building from an sdist or for PyPI" ON)
+option(PYTBLIS_STATIC_LINK "Statically link TBLIS" OFF)
 
 nanobind_add_module(_pytblis_impl src/pytblis.cxx)
 
-find_package(TBLIS REQUIRED)
+find_package(TBLIS)
 
 if(NOT TBLIS_FOUND)
   add_subdirectory(tblis EXCLUDE_FROM_ALL)
-  if(${PYTBLIS_PYPI_BUILD})
-    set(ENABLE_THREAD_MODEL pthread)
-    add_library(TBLIS::tblis-static ALIAS tblis)
-  endif()
+  add_library(TBLIS::tblis-static ALIAS tblis-static)
+  add_library(TBLIS::tblis ALIAS tblis)
 endif()
 # TBLIS_FOUND
-if(${PYTBLIS_PYPI_BUILD})
+if(${PYTBLIS_STATIC_LINK})
   target_link_libraries(_pytblis_impl PRIVATE TBLIS::tblis-static)
 else()
   target_link_libraries(_pytblis_impl PRIVATE TBLIS::tblis)

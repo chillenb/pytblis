@@ -38,17 +38,25 @@ Homepage = "https://github.com/chillenb/pytblis"
 Discussions = "https://github.com/chillenb/pytblis/discussions"
 Changelog = "https://github.com/chillenb/pytblis/releases"
 
-
 [project.optional-dependencies]
+tests = [
+  "pytest >=6",
+  "pytest-cov >=3",
+]
+
+[dependency-groups]
 tests = [
   "pytest >=6",
   "pytest-cov >=3",
 ]
 docs = [
   "sphinx>=7.0",
+  "numpy",
   "myst_parser>=0.13",
   "sphinx_copybutton",
   "sphinx_autodoc_typehints",
+  "numpydoc",
+  "intersphinx_registry",
   "furo>=2023.08.17",
 ]
 
