@@ -1,0 +1,136 @@
+name: wheels
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description:
+          "Run the build with tmate debugging enabled
+          (https://github.com/marketplace/actions/debugging-with-tmate)"
+        required: false
+        default: false
+  release:
+    types:
+      - published
+  pull_request:
+    paths:
+      - .github/workflows/cd.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Many color libraries just need this to be set to any value, but at least
+  # one distinguishes color depth, where "3" -> "256-bit color".
+  FORCE_COLOR: 3
+
+jobs:
+  make_sdist:
+    name: Make SDist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build SDist
+        run: pipx run build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz
+
+  build_wheels:
+    name: Wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux 64 bit manylinux_2_28
+          - os: ubuntu-latest
+            python: 310
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux_2_28
+            pytblis_arch: x86_64
+            c_compiler: gcc
+            cxx_compiler: g++
+            tblis_install_prefix: /usr
+
+          - os: ubuntu-24.04-arm
+            python: 310
+            platform_id: manylinux_aarch64
+            manylinux_image: manylinux_2_28
+            pytblis_arch: arm64
+            c_compiler: gcc
+            cxx_compiler: g++
+            tblis_install_prefix: /usr
+
+          # MacOS arm64
+          - os: macos-latest
+            platform_id: macosx_arm64
+            pytblis_arch: arm64
+            c_compiler: clang
+            cxx_compiler: clang++
+            tblis_install_prefix: tblisprefix
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: astral-sh/setup-uv@v6
+
+      - uses: pypa/cibuildwheel@v3.1.1
+        env:
+          CIBW_BEFORE_ALL:
+            bash {project}/scripts/cibw_before_all.sh ${{
+            matrix.tblis_install_prefix }} ${{ matrix.pytblis_arch }}  ${{
+            matrix.c_compiler }} ${{ matrix.cxx_compiler }}
+          CMAKE_GENERATOR: "Unix Makefiles"
+          CMAKE_BUILD_PARALLEL_LEVEL: 8
+          CIBW_BUILD:
+            "cp39-${{ matrix.platform_id }} cp310-${{ matrix.platform_id }}
+            cp311-${{ matrix.platform_id }} cp312-${{ matrix.platform_id }}
+            cp313-${{ matrix.platform_id }}"
+          CIBW_BUILD_VERBOSITY: 2
+          CIBW_ENVIRONMENT_PASS_LINUX:
+            "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL"
+          CMAKE_PREFIX_PATH: ${{ matrix.tblis_install_prefix }}
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ inputs.debug_enabled && failure() }}
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: wheelhouse/*.whl
+
+  upload_all:
+    needs: [build_wheels, make_sdist]
+    environment: pypi
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+
+      - name: Generate artifact attestations
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "dist/*"
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
