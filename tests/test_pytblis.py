@@ -145,7 +145,7 @@ tests = [
     "ab,ab,cd,cd->ac",
     "ab,ab,cd,cd->cd",
     "ab,ab,cd,cd,ef,ef->",
-    # Test outer prodcuts
+    # Test outer products
     "ab,cd,ef->abcdef",
     "ab,cd,ef->acdf",
     "ab,cd,de->abcde",

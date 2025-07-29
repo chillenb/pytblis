@@ -105,7 +105,8 @@ def tensordot(a, b, axes=2):
             if axes_b[k] < 0:
                 axes_b[k] += ndb
     if not equal:
-        raise ValueError("shape-mismatch for sum")
+        msg = "shape-mismatch for sum"
+        raise ValueError(msg)
 
     if a.dtype.type != b.dtype.type:
         warnings.warn("The types of the input tensors do not match. Falling back to numpy tensordot.", stacklevel=2)
@@ -129,7 +130,8 @@ def tensordot(a, b, axes=2):
     outshape = olda + oldb
 
     if len(outshape) + len(axes_a) > len(_valid_labels):
-        raise ValueError(f"Too many axes: maximum is {len(_valid_labels)}")
+        msg = f"Too many axes: maximum is {len(_valid_labels)}"
+        raise ValueError(msg)
 
     labels_common = _valid_labels[: len(axes_a)]
     remaining_labels = _valid_labels[len(axes_a) :].copy()
