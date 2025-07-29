@@ -19,12 +19,10 @@ def lint(session: nox.Session) -> None:
     Run the linter.
     """
     session.install("pre-commit")
-    session.run(
-        "pre-commit", "run", "--all-files", "--show-diff-on-failure", *session.posargs
-    )
+    session.run("pre-commit", "run", "--all-files", "--show-diff-on-failure", *session.posargs)
 
 
-@nox.session
+@nox.session(default=False)
 def pylint(session: nox.Session) -> None:
     """
     Run Pylint.
@@ -35,7 +33,7 @@ def pylint(session: nox.Session) -> None:
     session.run("pylint", "pytblis", *session.posargs)
 
 
-@nox.session
+@nox.session(default=False)
 def tests(session: nox.Session) -> None:
     """
     Run the unit and regular tests.
@@ -53,9 +51,7 @@ def docs(session: nox.Session) -> None:
 
     doc_deps = nox.project.dependency_groups(PROJECT, "docs")
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-b", dest="builder", default="html", help="Build target (default: html)"
-    )
+    parser.add_argument("-b", dest="builder", default="html", help="Build target (default: html)")
     parser.add_argument("output", nargs="?", help="Output directory")
     args, posargs = parser.parse_known_args(session.posargs)
     serve = args.builder == "html" and session.interactive

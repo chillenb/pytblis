@@ -26,7 +26,7 @@ import numpy as np
 from .wrappers import contract
 
 
-def einsum(*operands, out=None, optimize='greedy', **kwargs):
+def einsum(*operands, out=None, optimize="greedy", **kwargs):
     """
     einsum(subscripts, *operands, out=None, order='K',
            optimize='greedy')

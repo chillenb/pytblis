@@ -5,7 +5,9 @@ on:
     inputs:
       debug_enabled:
         type: boolean
-        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        description:
+          "Run the build with tmate debugging enabled
+          (https://github.com/marketplace/actions/debugging-with-tmate)"
         required: false
         default: false
   release:
@@ -84,14 +86,20 @@ jobs:
 
       - uses: pypa/cibuildwheel@v3.1.1
         env:
-          CIBW_BEFORE_ALL: bash {project}/scripts/cibw_before_all.sh ${{ matrix.tblis_install_prefix }} ${{ matrix.pytblis_arch }}  ${{ matrix.c_compiler }} ${{ matrix.cxx_compiler }}
+          CIBW_BEFORE_ALL:
+            bash {project}/scripts/cibw_before_all.sh ${{
+            matrix.tblis_install_prefix }} ${{ matrix.pytblis_arch }}  ${{
+            matrix.c_compiler }} ${{ matrix.cxx_compiler }}
           CMAKE_GENERATOR: "Unix Makefiles"
           CMAKE_BUILD_PARALLEL_LEVEL: 8
-          CIBW_BUILD: "cp39-${{ matrix.platform_id }} cp310-${{ matrix.platform_id }} cp311-${{ matrix.platform_id }} cp312-${{ matrix.platform_id }} cp313-${{ matrix.platform_id }}"
+          CIBW_BUILD:
+            "cp39-${{ matrix.platform_id }} cp310-${{ matrix.platform_id }}
+            cp311-${{ matrix.platform_id }} cp312-${{ matrix.platform_id }}
+            cp313-${{ matrix.platform_id }}"
           CIBW_BUILD_VERBOSITY: 2
-          CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL"
+          CIBW_ENVIRONMENT_PASS_LINUX:
+            "CMAKE_GENERATOR CMAKE_BUILD_PARALLEL_LEVEL"
           CMAKE_PREFIX_PATH: ${{ matrix.tblis_install_prefix }}
-
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3

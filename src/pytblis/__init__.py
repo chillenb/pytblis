@@ -1,6 +1,17 @@
-from ._pytblis_impl import _add, _dot, _mult, _reduce, _shift, reduce_t
+from ._pytblis_impl import add, dot, mult, reduce, reduce_t, shift
 from .einsum_impl import einsum
 from .tensordot_impl import tensordot
-from .wrappers import contract, ascontiguousarray
+from .wrappers import ascontiguousarray, contract
 
-__all__ = ["_add", "_dot", "_mult", "_reduce", "_shift", "contract", "einsum", "reduce_t", "tensordot", "ascontiguousarray"]
+__all__ = [
+    "add",
+    "ascontiguousarray",
+    "contract",
+    "dot",
+    "einsum",
+    "mult",
+    "reduce",
+    "reduce_t",
+    "shift",
+    "tensordot",
+]

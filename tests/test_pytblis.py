@@ -241,10 +241,7 @@ def test_einsum(string, dtype):
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
 
 
-single_array_tests = [
-    "ea", "fb", "abcd", "gc", "hd", "efgh",
-    "acdf", "jbje", "gihb", "hfac", "gfac", "gifabc", "hfac"
-]
+single_array_tests = ["ea", "fb", "abcd", "gc", "hd", "efgh", "acdf", "jbje", "gihb", "hfac", "gfac", "gifabc", "hfac"]
 
 
 @pytest.mark.parametrize("string", single_array_tests)

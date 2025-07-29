@@ -3,6 +3,7 @@ import numpy as np
 _valid_labels = list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 _accepted_types = (np.float32, np.float64, np.complex64, np.complex128)
 
+
 def _check_strides(*tensors):
     """
     Check for non-positive strides in the input tensors.
@@ -10,6 +11,7 @@ def _check_strides(*tensors):
     Non-contiguity is OK.
     """
     return all(all(s > 0 for s in tensor.strides) for tensor in tensors)
+
 
 def _check_tblis_types(*tensors):
     """

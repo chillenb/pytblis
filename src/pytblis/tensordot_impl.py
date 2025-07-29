@@ -34,9 +34,9 @@ import warnings
 
 import numpy as np
 
-from ._pytblis_impl import _mult
+from ._pytblis_impl import mult
+from .typecheck import _accepted_types, _valid_labels
 
-from .typecheck import _valid_labels, _check_strides, _check_tblis_types, _accepted_types
 
 def tensordot(a, b, axes=2):
     """
@@ -108,14 +108,13 @@ def tensordot(a, b, axes=2):
         raise ValueError("shape-mismatch for sum")
 
     if a.dtype.type != b.dtype.type:
-        warnings.warn(
-            "The types of the input tensors do not match. Falling back to numpy tensordot.", stacklevel=2
-        )
+        warnings.warn("The types of the input tensors do not match. Falling back to numpy tensordot.", stacklevel=2)
         return np.tensordot(a, b, axes=axes)
 
     if a.dtype.type not in _accepted_types:
         warnings.warn(
-            "TBLIS only supports float32, float64, complex64, and complex128. Falling back to numpy tensordot.", stacklevel=2
+            "TBLIS only supports float32, float64, complex64, and complex128. Falling back to numpy tensordot.",
+            stacklevel=2,
         )
         return np.tensordot(a, b, axes=axes)
 
@@ -159,5 +158,5 @@ def tensordot(a, b, axes=2):
     restype = np.result_type(a, b)
     c = np.empty(outshape, dtype=restype)
 
-    _mult(a, b, c, inds_A, inds_B, inds_C)
+    mult(a, b, c, inds_A, inds_B, inds_C)
     return c

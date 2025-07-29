@@ -4,7 +4,8 @@ project(${SKBUILD_PROJECT_NAME} LANGUAGES C CXX)
 find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 execute_process(
   COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
-  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE nanobind_ROOT)
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE nanobind_ROOT)
 
 find_package(nanobind CONFIG REQUIRED)
 
@@ -13,7 +14,6 @@ option(PYTBLIS_PYPI_BUILD "Assume we're building from an sdist or for PyPI" ON)
 nanobind_add_module(_pytblis_impl src/pytblis.cxx)
 
 find_package(TBLIS REQUIRED)
-
 
 if(NOT TBLIS_FOUND)
   add_subdirectory(tblis EXCLUDE_FROM_ALL)
@@ -30,7 +30,6 @@ else()
 endif()
 
 set_target_properties(_pytblis_impl PROPERTIES CXX_STANDARD 20)
-
 
 if(${SKBUILD})
   install(TARGETS _pytblis_impl LIBRARY DESTINATION pytblis)
