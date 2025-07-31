@@ -163,5 +163,9 @@ src/_version.py
 # vscode
 .vscode/
 
+# local TBLIS build and installation directories
+local_tblis_prefix/
+tblisbld/
+
 # miscellaneous
 scripts/conj.py
