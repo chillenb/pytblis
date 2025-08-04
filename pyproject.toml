@@ -37,6 +37,7 @@ Homepage = "https://github.com/chillenb/pytblis"
 "Bug Tracker" = "https://github.com/chillenb/pytblis/issues"
 Discussions = "https://github.com/chillenb/pytblis/discussions"
 Changelog = "https://github.com/chillenb/pytblis/releases"
+Documentation = "https://pytblis.readthedocs.io"
 
 [project.optional-dependencies]
 tests = [

@@ -1,9 +1,9 @@
 import enum
-from typing import TypeAlias, Union
+from typing import Union
 
 import numpy.typing as npt
 
-scalar: TypeAlias = Union[float, complex]
+scalar = Union[float, complex]
 
 __all__ = ["add", "dot", "mult", "reduce", "shift"]
 

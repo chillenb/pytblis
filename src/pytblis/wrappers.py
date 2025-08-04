@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, TypeAlias, Union
+from typing import Optional, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -7,7 +7,7 @@ import numpy.typing as npt
 from ._pytblis_impl import add, mult
 from .typecheck import _accepted_types, _check_strides, _check_tblis_types, _valid_labels
 
-scalar: TypeAlias = Union[float, complex]
+scalar = Union[float, complex]
 
 
 def transpose_add(
