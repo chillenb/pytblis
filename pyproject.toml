@@ -123,7 +123,12 @@ extend-select = [
 ignore = [
   "PLR09",    # Too many <...>
   "PLR2004",  # Magic value used in comparison
+  "EM101",    # string literals in exceptions
+  "UP007",    # don't use pipe in type annotation yet
 ]
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["T20"]

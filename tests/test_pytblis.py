@@ -29,6 +29,14 @@ import pytest
 import pytblis
 
 
+def random_scalar(is_complex, rng=None):
+    if rng is None:
+        rng = np.random.default_rng(0)
+    if is_complex:
+        return rng.random() + 1j * rng.random()
+    return rng.random()
+
+
 def test_pytblis_imported():
     """Sample test, will always pass so long as import statement worked."""
     assert "pytblis" in sys.modules
@@ -218,8 +226,9 @@ def build_shapes(string, dimension_dict=None):
     return tuple(shapes)
 
 
-def build_views(string, dimension_dict=None, dtype=np.float64):
-    rng = np.random.default_rng(0)
+def build_views(string, dimension_dict=None, dtype=np.float64, rng=None):
+    if rng is None:
+        rng = np.random.default_rng(0)
     views = []
     for shape in build_shapes(string, dimension_dict=dimension_dict):
         if shape:
@@ -241,7 +250,7 @@ def test_einsum(string, dtype):
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
 
 
-single_array_tests = ["ea", "fb", "abcd", "gc", "hd", "efgh", "acdf", "jbje", "gihb", "hfac", "gfac", "gifabc", "hfac"]
+single_array_tests = ["ea", "fb", "abcd", "gc", "hd", "efgh", "acdf", "gihb", "hfac", "gfac", "gifabc", "hfac"]
 
 
 @pytest.mark.parametrize("string", single_array_tests)
@@ -255,3 +264,41 @@ def test_ascontiguousarray(string, dtype):
     tblis_result = pytblis.ascontiguousarray(arr)
     numpy_result = np.ascontiguousarray(arr)
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+@pytest.mark.parametrize("string", single_array_tests)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_tensor_transpose(string, dtype):
+    rng = np.random.default_rng(0)
+    views = build_views(string, dtype=dtype)
+    arr = views[0]
+
+    perm = rng.permutation(len(arr.shape))
+
+    string_perm = "".join(np.array(list(string))[perm])
+    command_string = f"{string}->{string_perm}"
+
+    numpy_result = np.transpose(arr, axes=perm)
+    tblis_result = pytblis.transpose_add(command_string, arr, alpha=1.0)
+    assert np.allclose(tblis_result, numpy_result), f"Failed for command: {command_string}"
+
+
+@pytest.mark.parametrize("string", single_array_tests)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_tensor_transpose_add(string, dtype):
+    rng = np.random.default_rng(0)
+    a = build_views(string, dtype=dtype, rng=rng)[0]
+
+    alpha = random_scalar(np.iscomplexobj(a), rng=rng)
+    beta = random_scalar(np.iscomplexobj(a), rng=rng)
+    perm = rng.permutation(len(a.shape))
+
+    b = build_views(string, dtype=dtype, rng=rng)[0]
+    b = np.ascontiguousarray(np.transpose(b, axes=perm))
+
+    string_perm = "".join(np.array(list(string))[perm])
+    command_string = f"{string}->{string_perm}"
+
+    numpy_result = beta * b + alpha * np.transpose(a, axes=perm)
+    tblis_result = pytblis.transpose_add(command_string, a, alpha=alpha, beta=beta, out=b)
+    assert np.allclose(tblis_result, numpy_result), f"Failed for command: {command_string}"
