@@ -85,7 +85,8 @@ jobs:
           CIBW_BEFORE_ALL:
             bash {project}/scripts/cibw_before_all.sh ${{
             matrix.tblis_install_prefix }} ${{ matrix.pytblis_arch }}  ${{
-            matrix.c_compiler }} ${{ matrix.cxx_compiler }}
+            matrix.c_compiler }} ${{ matrix.cxx_compiler }} ${{
+            matrix.platform_id }}
           CMAKE_GENERATOR: "Unix Makefiles"
           CMAKE_BUILD_PARALLEL_LEVEL: 8
           CIBW_BUILD:
