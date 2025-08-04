@@ -303,4 +303,7 @@ NB_MODULE(_pytblis_impl, m) {
       "    (scalar, index) is returned, where scalar is the result of the reduction operation\n"
       "    and index is the index of the maximum or minimum value in the tensor A.\n"
       "    Otherwise, just the scalar result is returned.\n");
+
+  m.def("set_num_threads", &tblis_set_num_threads, nb::arg("num_threads"), "Set the number of threads used by TBLIS.");
+  m.def("get_num_threads", &tblis_get_num_threads, "Get the number of threads used by TBLIS.");
 }
