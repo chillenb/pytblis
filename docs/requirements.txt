@@ -1,0 +1,10 @@
+intersphinx_registry
+myst_parser>=0.13
+numpy
+numpydoc
+pydata-sphinx-theme
+pygments
+pytblis
+sphinx>=7.0
+sphinx_autodoc_typehints
+sphinx_copybutton

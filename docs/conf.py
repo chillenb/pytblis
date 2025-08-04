@@ -33,7 +33,7 @@ exclude_patterns = [
     ".venv",
 ]
 
-html_theme = "furo"
+html_theme = "pydata_sphinx_theme"
 
 html_theme_options: dict[str, Any] = {
     "footer_icons": [
