@@ -96,7 +96,7 @@ jobs:
           submodules: recursive
       - uses: astral-sh/setup-uv@v6
 
-      - uses: pypa/cibuildwheel@v3.1.1
+      - uses: pypa/cibuildwheel@v3.1.3
         env:
           CIBW_BEFORE_ALL:
             bash {project}/scripts/cibw_before_all.sh ${{
