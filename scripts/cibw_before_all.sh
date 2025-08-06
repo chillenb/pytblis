@@ -7,10 +7,21 @@ C_COMPILER="$3"
 CXX_COMPILER="$4"
 PLATFORM_ID="$5"
 
-if [[ "${PLATFORM_ID}" == "macos_x86_64" ]]; then
+if [[ "${PLATFORM_ID}" == "macosx_x86_64" ]]; then
   export CFLAGS="-arch x86_64"
   export CXXFLAGS="-arch x86_64"
+  export GA_NCPU=4
 fi
+
+if [[ "${PLATFORM_ID}" == "macosx_arm64" ]]; then
+  export GA_NCPU=3
+fi
+
+if [[ "${PLATFORM_ID}" == manylinux* ]]; then
+  export GA_NCPU=4
+fi
+
+export MAKEFLAGS="-j ${GA_NCPU}"
 
 cmake -S tblis -B tblisbld \
   -DCMAKE_BUILD_TYPE=Release \
@@ -18,5 +29,5 @@ cmake -S tblis -B tblisbld \
   -DCMAKE_C_COMPILER="${C_COMPILER}" \
   -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
   -DBLIS_CONFIG_FAMILY="${PYTBLIS_ARCH}"
-cmake --build tblisbld --parallel 8 --verbose
+cmake --build tblisbld --parallel "${GA_NCPU}" --verbose
 cmake --install tblisbld
