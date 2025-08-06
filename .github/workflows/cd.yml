@@ -81,13 +81,13 @@ jobs:
             tblis_install_prefix: tblisprefix
 
           # MacOS x86 cross-compile
-          - os: macos-latest
-            platform_id: macosx_x86_64
-            pytblis_arch: x86_64
-            cibwarch: x86_64
-            c_compiler: clang
-            cxx_compiler: clang++
-            tblis_install_prefix: tblisprefix
+          # - os: macos-latest
+          #   platform_id: macosx_x86_64
+          #   pytblis_arch: x86_64
+          #   cibwarch: x86_64
+          #   c_compiler: clang
+          #   cxx_compiler: clang++
+          #   tblis_install_prefix: tblisprefix
 
     steps:
       - uses: actions/checkout@v4
