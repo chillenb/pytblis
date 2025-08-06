@@ -10,9 +10,6 @@ on:
           (https://github.com/marketplace/actions/debugging-with-tmate)"
         required: false
         default: false
-  release:
-    types:
-      - published
   pull_request:
     paths:
       - .github/workflows/cd.yml
