@@ -21,13 +21,12 @@ if [[ "${PLATFORM_ID}" == manylinux* ]]; then
   export GA_NCPU=4
 fi
 
-export MAKEFLAGS="-j ${GA_NCPU}"
-
 cmake -S tblis -B tblisbld \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX="${INSTALLPREFIX}" \
   -DCMAKE_C_COMPILER="${C_COMPILER}" \
   -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
   -DBLIS_CONFIG_FAMILY="${PYTBLIS_ARCH}"
-cmake --build tblisbld --parallel "${GA_NCPU}" --verbose
+# cmake --build tblisbld --parallel "${GA_NCPU}" --verbose
+make -C tblisbld -j "${GA_NCPU}"
 cmake --install tblisbld
