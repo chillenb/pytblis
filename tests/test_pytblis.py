@@ -78,7 +78,7 @@ def test_contract(scalar_type):
         A = A + 1j * rng.random((3, 3, 3)).astype(scalar_type)
         B = B + 1j * rng.random((3, 3, 3)).astype(scalar_type)
 
-    C = pytblis.contract("ijk,jkl->il", A, B)
+    C = pytblis.contract("ijk, jkl->il", A, B)
     C_correct = np.einsum("ijk,jkl->il", A, B)
     assert np.allclose(C, C_correct)
 
@@ -189,7 +189,7 @@ tests = [
     "abcd,cdef->feba",
     "abcd,efdc",
     # Inner than dot
-    "aab,bc->ac",
+    "aab,bc ->ac",
     "ab,bcc->ac",
     "aab,bcc->ac",
     "baa,bcc->ac",
@@ -219,6 +219,7 @@ def build_shapes(string, dimension_dict=None):
         dimension_dict = _default_dim_dict
 
     shapes = []
+    string = string.replace(" ", "")
     terms = string.split("->")[0].split(",")
     for term in terms:
         dims = [dimension_dict[x] for x in term]

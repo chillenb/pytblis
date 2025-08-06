@@ -68,6 +68,7 @@ def transpose_add(
         msg = "Input tensor has non-positive strides."
         raise ValueError(msg)
 
+    subscripts = subscripts.replace(" ", "")
     a_idx, b_idx = subscripts.split("->")
 
     # a_idx, b_idx, c_idx = re.split(",|->", subscripts)
@@ -153,6 +154,7 @@ def contract(
             raise ValueError(msg)
         return np.einsum(subscripts, a, b)
 
+    subscripts = subscripts.replace(" ", "")
     input_str, c_idx = subscripts.split("->")
     a_idx, b_idx = input_str.split(",")
 
