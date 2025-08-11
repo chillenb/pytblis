@@ -19,6 +19,7 @@ fi
 
 if [[ "${PLATFORM_ID}" == manylinux* ]]; then
   export GA_NCPU=4
+  dnf -y install hwloc hwloc-devel
 fi
 
 cmake -S tblis -B tblisbld \
@@ -26,7 +27,8 @@ cmake -S tblis -B tblisbld \
   -DCMAKE_INSTALL_PREFIX="${INSTALLPREFIX}" \
   -DCMAKE_C_COMPILER="${C_COMPILER}" \
   -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
-  -DBLIS_CONFIG_FAMILY="${PYTBLIS_ARCH}"
+  -DBLIS_CONFIG_FAMILY="${PYTBLIS_ARCH}" \
+  -DENABLE_HWLOC=ON
 # cmake --build tblisbld --parallel "${GA_NCPU}" --verbose
 make -C tblisbld -j "${GA_NCPU}"
 cmake --install tblisbld
