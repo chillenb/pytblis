@@ -23,7 +23,7 @@ fi
 
 if [[ "${PLATFORM_ID}" == manylinux* ]]; then
   export GA_NCPU=4
-  export THREAD_MODEL=openmp
+  export THREAD_MODEL=pthreads
   export HWLOC_ENABLED=ON
   dnf -y install hwloc hwloc-devel
 fi
