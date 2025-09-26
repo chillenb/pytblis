@@ -23,7 +23,7 @@
 
 import numpy as np
 
-from .wrappers import contract
+from .wrappers import contract, transpose_add
 
 
 def einsum(*operands, out=None, optimize="greedy", **kwargs):
@@ -86,19 +86,59 @@ def einsum(*operands, out=None, optimize="greedy", **kwargs):
         # Do we need to deal with the output?
         handle_out = specified_out and ((num + 1) == len(contraction_list))
 
-        if blas:
-            if handle_out:
-                new_view = contract(einsum_str, *tmp_operands, out=out)
-            else:
-                new_view = contract(einsum_str, *tmp_operands)
-
-        else:
+        if len(tmp_operands) > 2:
             # fallback to numpy einsum
             # todo: make non-binary contractions more expensive in the cost function.
             out_kwarg = None
             if handle_out:
                 out_kwarg = out
             new_view = np.einsum(einsum_str, *tmp_operands, out=out_kwarg, **kwargs)
+        elif len(tmp_operands) == 2:
+            # partial trace if redundant indices appears in A or B
+            einsum_str = einsum_str.replace(" ", "")
+            subscripts_ab, subscript_c = einsum_str.split("->")
+            subscript_a, subscript_b = subscripts_ab.split(",")
+            idx_a = frozenset(subscript_a)
+            idx_b = frozenset(subscript_b)
+            idx_c = frozenset(subscript_c)
+            idx_redundant_a = idx_a - idx_b - idx_c
+            idx_redundant_b = idx_b - idx_a - idx_c
+            idx_redundant_c = idx_c - idx_a - idx_b
+            if idx_redundant_c:
+                raise RuntimeError("Should never have redundant indices in the output. This is probably a bug.")
+            if idx_redundant_a:
+                # partial trace on tmp_operands[0]
+                subscript_a_traced = "".join([i for i in subscript_a if i not in idx_redundant_a])
+                einsum_str_traced = f"{subscript_a}->{subscript_a_traced}"
+                tmp_operands[0] = transpose_add(einsum_str_traced, tmp_operands[0])
+                subscript_a = subscript_a_traced
+            if idx_redundant_b:
+                # partial trace on tmp_operands[1]
+                subscript_b_traced = "".join([i for i in subscript_b if i not in idx_redundant_b])
+                einsum_str_traced = f"{subscript_b}->{subscript_b_traced}"
+                tmp_operands[1] = transpose_add(einsum_str_traced, tmp_operands[1])
+                subscript_b = subscript_b_traced
+            # Now do the contraction
+            einsum_str_contr = f"{subscript_a},{subscript_b}->{subscript_c}"
+            out_kwarg = None
+            if handle_out:
+                out_kwarg = out
+            new_view = contract(einsum_str_contr, *tmp_operands, out=out_kwarg, **kwargs)
+        elif len(tmp_operands) == 1:
+            out_kwarg = None
+            if handle_out:
+                out_kwarg = out
+            # check if only a transpose
+            einsum_str = einsum_str.replace(" ", "")
+            subscript_a, subscript_b = einsum_str.split("->")
+            if sorted(subscript_a) == sorted(subscript_b):
+                # only a transpose, use numpy for this (should return view)
+                new_view = np.einsum(einsum_str, tmp_operands[0], out=out_kwarg, **kwargs)
+            else:
+                # may involve a trace or replication, use tblis transpose_add for this
+                new_view = transpose_add(einsum_str, tmp_operands[0], out=out_kwarg, **kwargs)
+        else:
+            raise ValueError("Should never have zero operands to contract")
 
         # Append new items and dereference what we can
         operands.append(new_view)
