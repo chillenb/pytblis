@@ -206,6 +206,19 @@ tests = [
     "bbd,bda,fc,db->acf",
     "dba,ead,cad->bce",
     "aef,fbc,dca->bde",
+    # single array transpose
+    "ea->ea",
+    "fb->fb",
+    "abcd->dcab",
+    "gc->cg",
+    "hd->dh",
+    "efgh->hfge",
+    "acdf->afcd",
+    "gihb->ghib",
+    "hfac->cfah",
+    "gfac->cgaf",
+    "gifabc->abifcg",
+    "hfac->cfha",
 ]
 
 _sizes = [2, 3, 4, 5, 4, 3, 2, 6, 5, 4, 3, 2, 5, 7, 4, 3, 2, 3, 4, 9, 10, 2, 4, 5, 3, 2, 6]
@@ -238,7 +251,7 @@ def build_views(string, dimension_dict=None, dtype=np.float64, rng=None):
                 arr += 1j * rng.random(shape).astype(dtype)
             views.append(arr)
         else:
-            views.append(rng.random())
+            views.append(dtype(rng.random()))
     return tuple(views)
 
 
