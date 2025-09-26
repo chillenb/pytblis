@@ -219,6 +219,9 @@ tests = [
     "gfac->cgaf",
     "gifabc->abifcg",
     "hfac->cfha",
+    # single array partial trace
+    "gfac->caf",
+    "gcac->ca",
 ]
 
 _sizes = [2, 3, 4, 5, 4, 3, 2, 6, 5, 4, 3, 2, 5, 7, 4, 3, 2, 3, 4, 9, 10, 2, 4, 5, 3, 2, 6]
