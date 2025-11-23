@@ -4,7 +4,7 @@ from typing import Optional, Union
 import numpy as np
 import numpy.typing as npt
 
-from ._pytblis_impl import add, mult, tensor_set, shift
+from ._pytblis_impl import add, mult, shift
 from .typecheck import _accepted_types, _check_strides, _check_tblis_types, _valid_labels
 
 scalar = Union[float, complex]
@@ -74,7 +74,6 @@ def transpose_add(
 
     subscripts = subscripts.replace(" ", "")
     a_idx, b_idx = subscripts.split("->")
-
 
     if not set(a_idx) >= set(b_idx):
         msg = f"Invalid subscripts '{subscripts}'"
@@ -165,15 +164,15 @@ def contract(
         warnings.warn(
             f"Output tensor of shape {out.shape} has non-positive strides: {out.strides}. "
             "Will attempt to fall back to numpy tensordot.",
-            stacklevel=2
+            stacklevel=2,
         )
         fallback = True
 
     if not input_strides_ok and not input_size_zero:
         warnings.warn(
-            f"Input tensor of shape {a.shape} has non-positive strides: {a.strides}. " \
+            f"Input tensor of shape {a.shape} has non-positive strides: {a.strides}. "
             "Will attempt to fall back to numpy tensordot.",
-            stacklevel=2
+            stacklevel=2,
         )
         fallback = True
 
@@ -268,7 +267,7 @@ def ascontiguousarray(a):
     if not _check_strides(a):
         warnings.warn(
             f"Input tensor of shape {a.shape} has non-positive strides: {a.strides}. Falling back to numpy ascontiguousarray.",
-            stacklevel=2
+            stacklevel=2,
         )
         return np.ascontiguousarray(a)
 

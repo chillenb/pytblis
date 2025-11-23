@@ -36,6 +36,7 @@ def random_scalar(is_complex, rng=None):
         return rng.random() + 1j * rng.random()
     return rng.random()
 
+
 def random_array(shape, scalar_type, rng=None):
     if rng is None:
         rng = np.random.default_rng(0)
@@ -49,6 +50,7 @@ def random_array(shape, scalar_type, rng=None):
 def test_pytblis_imported():
     """Sample test, will always pass so long as import statement worked."""
     assert "pytblis" in sys.modules
+
 
 @pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
 def test_transpose_add_size0(scalar_type):
@@ -94,14 +96,12 @@ def test_contract(scalar_type):
     A = random_array((3, 3, 3), scalar_type, rng=rng)
     B = random_array((3, 3, 3), scalar_type, rng=rng)
 
-
     C = pytblis.contract("ijk, jkl->il", A, B)
     C_correct = np.einsum("ijk,jkl->il", A, B)
     assert np.allclose(C, C_correct)
 
     A = random_array((3, 5, 4), scalar_type, rng=rng)
     B = random_array((5, 4, 3), scalar_type, rng=rng)
-
 
     C = pytblis.contract("ijk,jkl->il", A, B)
     C_correct = np.einsum("ijk,jkl->il", A, B)
@@ -125,6 +125,7 @@ def test_contract_size0(scalar_type):
     D_orig[:3, :3] = C_correct
 
     assert np.allclose(D, D_orig)
+
 
 def test_tensordot_type_mixed():
     rng = np.random.default_rng(0)
@@ -210,7 +211,7 @@ tests = [
     "abc,abc",
     "abc,bac",
     "abc,cba",
-#    "Za,Za",
+    #    "Za,Za",
     # GEMM test cases
     "ab,bc",
     "ab,cb",
