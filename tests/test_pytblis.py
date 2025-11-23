@@ -36,21 +36,41 @@ def random_scalar(is_complex, rng=None):
         return rng.random() + 1j * rng.random()
     return rng.random()
 
+def random_array(shape, scalar_type, rng=None):
+    if rng is None:
+        rng = np.random.default_rng(0)
+    if np.issubdtype(scalar_type, np.complexfloating):
+        arr = rng.random(shape) + 1j * rng.random(shape)
+    else:
+        arr = rng.random(shape)
+    return arr.astype(scalar_type)
+
 
 def test_pytblis_imported():
     """Sample test, will always pass so long as import statement worked."""
     assert "pytblis" in sys.modules
 
+@pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
+def test_transpose_add_size0(scalar_type):
+    rng = np.random.default_rng(0)
+    A = random_array((0, 3, 3), scalar_type, rng=rng)
+    B = random_array((3, 3), scalar_type, rng=rng)
+    C = pytblis.transpose_add("Zij->ij", A, alpha=1.0)
+    C_correct = np.einsum("Zij->ij", A)
+    assert np.allclose(C, C_correct)
+
+    A = random_array((0, 3, 3), scalar_type, rng=rng)
+    B = random_array((3, 3), scalar_type, rng=rng)
+    C_correct = np.einsum("Zij->ij", A) + 0.5 * B
+    C = pytblis.transpose_add("Zij->ij", A, alpha=1.0, beta=0.5, out=B)
+    assert np.allclose(C, C_correct)
+
 
 @pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
 def test_tensordot(scalar_type):
     rng = np.random.default_rng(0)
-    A = rng.random((3, 3, 3)).astype(scalar_type)
-    B = rng.random((3, 3, 3)).astype(scalar_type)
-
-    if np.iscomplexobj(A) or np.iscomplexobj(B):
-        A = A + 1j * rng.random((3, 3, 3)).astype(scalar_type)
-        B = B + 1j * rng.random((3, 3, 3)).astype(scalar_type)
+    A = random_array((3, 3, 3), scalar_type, rng=rng)
+    B = random_array((3, 3, 3), scalar_type, rng=rng)
 
     C = pytblis.tensordot(A, B, axes=([2], [0]))
     C_correct = np.tensordot(A, B, axes=([2], [0]))
@@ -71,28 +91,40 @@ def test_tensordot(scalar_type):
 @pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
 def test_contract(scalar_type):
     rng = np.random.default_rng(0)
-    A = rng.random((3, 3, 3)).astype(scalar_type)
-    B = rng.random((3, 3, 3)).astype(scalar_type)
+    A = random_array((3, 3, 3), scalar_type, rng=rng)
+    B = random_array((3, 3, 3), scalar_type, rng=rng)
 
-    if np.iscomplexobj(A) or np.iscomplexobj(B):
-        A = A + 1j * rng.random((3, 3, 3)).astype(scalar_type)
-        B = B + 1j * rng.random((3, 3, 3)).astype(scalar_type)
 
     C = pytblis.contract("ijk, jkl->il", A, B)
     C_correct = np.einsum("ijk,jkl->il", A, B)
     assert np.allclose(C, C_correct)
 
-    A = rng.random((3, 5, 4)).astype(scalar_type)
-    B = rng.random((5, 4, 3)).astype(scalar_type)
+    A = random_array((3, 5, 4), scalar_type, rng=rng)
+    B = random_array((5, 4, 3), scalar_type, rng=rng)
 
-    if np.iscomplexobj(A) or np.iscomplexobj(B):
-        A = A + 1j * rng.random((3, 5, 4)).astype(scalar_type)
-        B = B + 1j * rng.random((5, 4, 3)).astype(scalar_type)
 
     C = pytblis.contract("ijk,jkl->il", A, B)
     C_correct = np.einsum("ijk,jkl->il", A, B)
     assert np.allclose(C, C_correct)
 
+
+@pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
+def test_contract_size0(scalar_type):
+    rng = np.random.default_rng(0)
+    A = random_array((0, 3), scalar_type, rng=rng)
+    B = random_array((3, 3), scalar_type, rng=rng)
+
+    C = pytblis.contract("Za,ab->ab", A, B, allow_partial_trace=True)
+    C_correct = np.einsum("Za,ab->ab", A, B)
+    assert np.allclose(C, C_correct)
+
+    D = random_array((4, 5), scalar_type, rng=rng)
+    D_orig = D.copy()
+    pytblis.contract("Za,ab->ab", A, B, out=D[:3, :3], allow_partial_trace=True)
+
+    D_orig[:3, :3] = C_correct
+
+    assert np.allclose(D, D_orig)
 
 def test_tensordot_type_mixed():
     rng = np.random.default_rng(0)
@@ -178,6 +210,7 @@ tests = [
     "abc,abc",
     "abc,bac",
     "abc,cba",
+#    "Za,Za",
     # GEMM test cases
     "ab,bc",
     "ab,cb",
@@ -188,6 +221,7 @@ tests = [
     "abcd,cdef",
     "abcd,cdef->feba",
     "abcd,efdc",
+    "Za,ab->ab",
     # Inner than dot
     "aab,bc ->ac",
     "ab,bcc->ac",
@@ -224,9 +258,9 @@ tests = [
     "gcac->ca",
 ]
 
-_sizes = [2, 3, 4, 5, 4, 3, 2, 6, 5, 4, 3, 2, 5, 7, 4, 3, 2, 3, 4, 9, 10, 2, 4, 5, 3, 2, 6]
+_sizes = [2, 3, 4, 5, 4, 3, 2, 6, 5, 4, 3, 2, 5, 7, 4, 3, 2, 3, 4, 9, 0, 2, 4, 5, 3, 2, 6]
 _no_collision_chars = "".join(chr(i) for i in range(7000, 7007))
-_valid_chars = "abcdefghijklmnopqABC" + _no_collision_chars
+_valid_chars = "abcdefghijklmnopqABCZ" + _no_collision_chars
 _default_dim_dict = dict(zip(_valid_chars, _sizes))
 
 
@@ -264,6 +298,7 @@ def test_einsum(string, dtype):
     views = build_views(string, dtype=dtype)
     tblis_result = pytblis.einsum(string, *views)
     numpy_result = np.einsum(string, *views)
+    assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
 
 

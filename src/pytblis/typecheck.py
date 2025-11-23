@@ -4,16 +4,18 @@ _valid_labels = list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 _accepted_types = (np.float32, np.float64, np.complex64, np.complex128)
 
 
-def _check_strides(*tensors):
+def _check_strides(*tensors, out=None):
     """
-    Check for non-positive strides in the input tensors.
-    Return False if any tensor has a non-positive stride, otherwise True.
+    Check for negative strides in the input tensors.
+    Return False if any tensor has a negative stride, otherwise True.
     Non-contiguity is OK.
     """
-    return all(all(s > 0 for s in tensor.strides) for tensor in tensors)
+    inputs_ok = all(all(s > 0 for s in tensor.strides) for tensor in tensors)
+    output_ok = (out is None) or all(s > 0 for s in out.strides)
+    return inputs_ok, output_ok
 
 
-def _check_tblis_types(*tensors):
+def _check_tblis_types(*tensors, out=None):
     """
     Returns the scalar type if all tensors have the same datatype, and this datatype is
     one of the supported types (float, double, complex float, complex double).
@@ -25,4 +27,6 @@ def _check_tblis_types(*tensors):
     for tensor in tensors:
         if tensor.dtype.type != first_type or tensor.dtype.type not in _accepted_types:
             return None
+    if out is not None and out.dtype.type != first_type:
+        return None
     return first_type

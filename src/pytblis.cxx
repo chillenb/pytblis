@@ -264,6 +264,18 @@ NB_MODULE(_pytblis_impl, m) {
       nb::arg("A"), nb::arg("idx_A"), nb::arg("alpha") = 0.0, nb::arg("beta") = 1.0,
       "A_[idx_A] = alpha + beta * A_[idx_A]");
 
+m.def(
+      "tensor_set",
+      [](const nb::ndarray<> &A, const std::string &idx_A, dcomplex alpha = 0.0) {
+        tblis_tensor a = ndarray_to_scaled_tblis_tensor(A, 1.0, false);
+        label_vector idx_A_vec = string_to_label_vector(idx_A);
+        tblis_scalar alpha_scalar(alpha);
+        tblis_scalar alpha_with_a_type = alpha_scalar.convert(a.type);
+        tblis_tensor_set(NULL, NULL, &alpha_with_a_type, &a, idx_A_vec.data());
+      },
+      nb::arg("A"), nb::arg("idx_A"), nb::arg("alpha") = 0.0,
+      "A_[idx_A] = alpha");
+
   m.def(
       "reduce",
       [](const nb::ndarray<> &A, const std::string &idx_A, reduce_t op, bool conja = false) -> nb::object {
