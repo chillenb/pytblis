@@ -101,6 +101,11 @@ If you use TBLIS in your academic work, it's a good idea to cite:
 TBLIS is not my work, and its developers are not responsible for flaws in these
 Python bindings.
 
+## Acknowledgements
+
+The implementation of einsum and the tests are modified versions of those from
+[opt_einsum](https://github.com/dgasmith/opt_einsum).
+
 <!-- SPHINX-START -->
 
 <!-- prettier-ignore-start -->
