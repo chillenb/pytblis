@@ -10,6 +10,8 @@ execute_process(
 find_package(nanobind CONFIG REQUIRED)
 
 option(PYTBLIS_STATIC_LINK "Statically link TBLIS" OFF)
+option(ADD_TBLIS_TO_RPATH
+       "Add TBLIS library path to RPATH of the pytblis module" ON)
 
 nanobind_add_module(_pytblis_impl src/pytblis.cxx)
 
@@ -25,6 +27,12 @@ if(${PYTBLIS_STATIC_LINK})
   target_link_libraries(_pytblis_impl PRIVATE TBLIS::tblis-static)
 else()
   target_link_libraries(_pytblis_impl PRIVATE TBLIS::tblis)
+  if(${ADD_TBLIS_TO_RPATH})
+    get_target_property(tblis_location TBLIS::tblis LOCATION)
+    get_filename_component(tblis_parent_dir ${tblis_location} DIRECTORY)
+    set_target_properties(_pytblis_impl PROPERTIES INSTALL_RPATH
+                                                   ${tblis_parent_dir})
+  endif()
 endif()
 
 set_target_properties(_pytblis_impl PROPERTIES CXX_STANDARD 20)

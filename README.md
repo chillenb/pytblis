@@ -21,6 +21,18 @@ Set your CPU on fire with
 
 `pip install pytblis`
 
+The pre-built wheels on PyPI use pthreads for multithreading. To reduce the
+overhead due to creating and joining threads, compile pytblis yourself and
+configure it to use OpenMP.
+
+## Building
+
+1. Install TBLIS.
+2. Run `CMAKE_ARGS="-DTBLIS_ROOT=wherever_tblis_is_installed" pip install .`
+
+See [dev_install.sh](dev_install.sh) for an example. This script installs TBLIS
+in `./local_tblis_prefix` and then links pytblis against it.
+
 ## Usage
 
 `pytblis.einsum` and `pytblis.tensordot` are drop-in replacements for
