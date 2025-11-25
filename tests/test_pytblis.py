@@ -90,43 +90,6 @@ def test_tensordot(scalar_type):
     assert np.allclose(C, C_correct)
 
 
-@pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
-def test_contract(scalar_type):
-    rng = np.random.default_rng(0)
-    A = random_array((3, 3, 3), scalar_type, rng=rng)
-    B = random_array((3, 3, 3), scalar_type, rng=rng)
-
-    C = pytblis.contract("ijk, jkl->il", A, B)
-    C_correct = np.einsum("ijk,jkl->il", A, B)
-    assert np.allclose(C, C_correct)
-
-    A = random_array((3, 5, 4), scalar_type, rng=rng)
-    B = random_array((5, 4, 3), scalar_type, rng=rng)
-
-    C = pytblis.contract("ijk,jkl->il", A, B)
-    C_correct = np.einsum("ijk,jkl->il", A, B)
-    assert np.allclose(C, C_correct)
-
-
-@pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
-def test_contract_size0(scalar_type):
-    rng = np.random.default_rng(0)
-    A = random_array((0, 3), scalar_type, rng=rng)
-    B = random_array((3, 3), scalar_type, rng=rng)
-
-    C = pytblis.contract("Za,ab->ab", A, B, allow_partial_trace=True)
-    C_correct = np.einsum("Za,ab->ab", A, B)
-    assert np.allclose(C, C_correct)
-
-    D = random_array((4, 5), scalar_type, rng=rng)
-    D_orig = D.copy()
-    pytblis.contract("Za,ab->ab", A, B, out=D[:3, :3], allow_partial_trace=True)
-
-    D_orig[:3, :3] = C_correct
-
-    assert np.allclose(D, D_orig)
-
-
 def test_tensordot_type_mixed():
     rng = np.random.default_rng(0)
     A = rng.random((3, 3)).astype(np.float32)
@@ -303,7 +266,7 @@ def test_einsum(string, dtype):
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
 
 
-single_array_tests = ["ea", "fb", "abcd", "gc", "hd", "efgh", "acdf", "gihb", "hfac", "gfac", "gifabc", "hfac"]
+single_array_tests = ["eZ", "fb", "abcd", "gc", "hd", "efgh", "acZf", "gihb", "hfac", "gfac", "gifabc", "hfac", "Z"]
 
 
 @pytest.mark.parametrize("string", single_array_tests)
@@ -355,3 +318,65 @@ def test_tensor_transpose_add(string, dtype):
     numpy_result = beta * b + alpha * np.transpose(a, axes=perm)
     tblis_result = pytblis.transpose_add(command_string, a, alpha=alpha, beta=beta, out=b)
     assert np.allclose(tblis_result, numpy_result), f"Failed for command: {command_string}"
+
+
+contraction_tests = [
+    "ijk, jkl->il",
+    "abZd, Zd->ab",
+    "aab, bZ->aZ",
+    "ab, ba->",
+    "abc, cba->",
+    "abcd, cdef->abef",
+    "aab, bcc->ac",
+    "bbZZ, aaZ->baZ",
+]
+
+
+@pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("string", contraction_tests)
+def test_contract(string, scalar_type):
+    rng = np.random.default_rng(0)
+    a, b = build_views(string, dtype=scalar_type, rng=rng)
+    tblis_result = pytblis.contract(string, a, b)
+    numpy_result = np.einsum(string, a, b)
+    assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+@pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("string", contraction_tests)
+def test_contract_with_out(string, scalar_type):
+    rng = np.random.default_rng(0)
+    a, b = build_views(string, dtype=scalar_type, rng=rng)
+    numpy_result = np.einsum(string, a, b)
+    out = np.empty_like(numpy_result)
+    tblis_result = pytblis.contract(string, a, b, out=out)
+    assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+@pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("string", contraction_tests)
+def test_contract_alpha(string, scalar_type):
+    rng = np.random.default_rng(0)
+    alpha = random_scalar(np.iscomplexobj(scalar_type()), rng=rng)
+    a, b = build_views(string, dtype=scalar_type, rng=rng)
+    tblis_result = pytblis.contract(string, a, b, alpha=alpha)
+    numpy_result = alpha * np.einsum(string, a, b)
+    assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+@pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("string", contraction_tests)
+def test_contract_with_out_alphabeta(string, scalar_type):
+    rng = np.random.default_rng(0)
+    alpha = random_scalar(np.iscomplexobj(scalar_type()), rng=rng)
+    beta = random_scalar(np.iscomplexobj(scalar_type()), rng=rng)
+    a, b = build_views(string, dtype=scalar_type, rng=rng)
+    numpy_result = alpha * np.einsum(string, a, b)
+    C = random_array(numpy_result.shape, scalar_type, rng=rng)
+    numpy_result += beta * C
+    tblis_result = pytblis.contract(string, a, b, alpha=alpha, beta=beta, out=C)
+    assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"

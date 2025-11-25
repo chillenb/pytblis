@@ -68,7 +68,7 @@ def transpose_add(
     if not input_strides_ok and a.size != 0:
         msg = f"Input tensor of shape {a.shape} has non-positive strides: {a.strides}"
         raise ValueError(msg)
-    if not output_strides_ok:
+    if not output_strides_ok and out.size != 0:
         msg = f"Output tensor of shape {out.shape} has non-positive strides: {out.strides}"
         raise ValueError(msg)
 
@@ -95,8 +95,6 @@ def transpose_add(
     # if a is size zero, tensor_add quits early and does not scale B.
     if a.size == 0:
         shift(out, b_idx, alpha=0.0, beta=beta)
-    elif out.size == 0:
-        pass
     else:
         add(a, out, a_idx, b_idx, alpha=alpha, beta=beta, conja=conja, conjb=conjout)
     return out
@@ -148,7 +146,7 @@ def contract(
     b = np.asarray(b)
     scalar_type = _check_tblis_types(a, b, out=out)
     input_strides_ok, output_strides_ok = _check_strides(a, b, out=out)
-    input_size_zero = a.size == 0 or b.size == 0
+    is_trivial = a.size == 0 or b.size == 0
 
     fallback = False
 
@@ -160,7 +158,7 @@ def contract(
             stacklevel=2,
         )
         fallback = True
-    if not output_strides_ok:
+    if not output_strides_ok and not is_trivial:
         warnings.warn(
             f"Output tensor of shape {out.shape} has non-positive strides: {out.strides}. "
             "Will attempt to fall back to numpy tensordot.",
@@ -168,7 +166,7 @@ def contract(
         )
         fallback = True
 
-    if not input_strides_ok and not input_size_zero:
+    if not input_strides_ok and not is_trivial:
         warnings.warn(
             f"Input tensor of shape {a.shape} has non-positive strides: {a.strides}. "
             "Will attempt to fall back to numpy tensordot.",
@@ -240,7 +238,7 @@ def contract(
 
     # handle zero-sized input
     # if A or B is size zero, mult quits early and does not scale C.
-    if input_size_zero:
+    if is_trivial:
         shift(out, subscript_c, alpha=0.0, beta=beta)
     else:
         mult(a, b, out, subscript_a, subscript_b, subscript_c, alpha=alpha, beta=beta, conja=conja, conjb=conjb)
