@@ -27,6 +27,18 @@ configure it to use OpenMP.
 
 ## Building
 
+### the easy way:
+
+`pip install --no-binary pytblis pytblis`
+
+The default compile options will give good performance. OpenMP is the default
+thread model when building from source. You can pass additional options to CMake
+via `CMAKE_ARGS`, change the thread model, compile for other
+[CPU microarchitectures](https://github.com/flame/blis/blob/master/docs/ConfigurationHowTo.md#configuration-families),
+etc.
+
+### the hard way:
+
 1. Install TBLIS.
 2. Run `CMAKE_ARGS="-DTBLIS_ROOT=wherever_tblis_is_installed" pip install .`
 
