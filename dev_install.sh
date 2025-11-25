@@ -6,7 +6,7 @@ NCPUS=$(nproc)
 
 if ! test -d local_tblis_prefix; then
   cmake -S tblis -B tblisbld \
-    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=local_tblis_prefix \
     -DBLIS_CONFIG_FAMILY="auto" \
     -DENABLE_STATIC=OFF \
