@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.15...3.26)
+include(CMakeDependentOption)
+
 project(${SKBUILD_PROJECT_NAME} LANGUAGES C CXX)
 
 find_package(
@@ -13,7 +15,6 @@ execute_process(
 
 find_package(nanobind CONFIG REQUIRED)
 
-option(PYTBLIS_STATIC_LINK "Statically link TBLIS" OFF)
 option(ADD_TBLIS_TO_RPATH
        "Add TBLIS library path to RPATH of the pytblis module" ON)
 
@@ -21,15 +22,21 @@ nanobind_add_module(_pytblis_impl STABLE_ABI src/pytblis.cxx)
 
 find_package(TBLIS)
 
+# If TBLIS is not found, we're going to build it, so may as well static link
+cmake_dependent_option(PYTBLIS_STATIC_LINK "Statically link TBLIS" OFF
+                       TBLIS_FOUND ON)
+
 if(NOT TBLIS_FOUND)
   add_subdirectory(tblis EXCLUDE_FROM_ALL)
-  add_library(TBLIS::tblis-static ALIAS tblis-static)
-  add_library(TBLIS::tblis ALIAS tblis)
+else()
+
 endif()
 # TBLIS_FOUND
 if(${PYTBLIS_STATIC_LINK})
+  message(STATUS "Statically linking TBLIS into pytblis module")
   target_link_libraries(_pytblis_impl PRIVATE TBLIS::tblis-static)
 else()
+  message(STATUS "Dynamically linking TBLIS")
   target_link_libraries(_pytblis_impl PRIVATE TBLIS::tblis)
   if(${ADD_TBLIS_TO_RPATH})
     get_target_property(tblis_location TBLIS::tblis LOCATION)
