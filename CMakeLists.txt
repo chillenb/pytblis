@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.15...3.26)
 project(${SKBUILD_PROJECT_NAME} LANGUAGES C CXX)
 
-find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(
+  Python 3.8 REQUIRED
+  COMPONENTS Interpreter Development.Module
+  OPTIONAL_COMPONENTS Development.SABIModule)
+
 execute_process(
   COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -13,7 +17,7 @@ option(PYTBLIS_STATIC_LINK "Statically link TBLIS" OFF)
 option(ADD_TBLIS_TO_RPATH
        "Add TBLIS library path to RPATH of the pytblis module" ON)
 
-nanobind_add_module(_pytblis_impl src/pytblis.cxx)
+nanobind_add_module(_pytblis_impl STABLE_ABI src/pytblis.cxx)
 
 find_package(TBLIS)
 
