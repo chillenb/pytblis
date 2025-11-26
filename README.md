@@ -19,8 +19,8 @@ Set your CPU on fire with
 
 ## Installation
 
-I will try to get this package added to conda-forge. In the meantime,
-conda packages may be downloaded from my personal channel.
+I will try to get this package added to conda-forge. In the meantime, conda
+packages may be downloaded from my personal channel.
 
 ```
 conda install pytblis -c conda-forge -c chillenb
@@ -31,8 +31,6 @@ overhead due to creating and joining threads, compile pytblis yourself and
 configure it to use OpenMP, or use the conda packages.
 
 `pip install pytblis` (not as performant)
-
-
 
 ## Installation from source
 
