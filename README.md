@@ -19,13 +19,22 @@ Set your CPU on fire with
 
 ## Installation
 
-`pip install pytblis`
+I will try to get this package added to conda-forge. In the meantime,
+conda packages may be downloaded from my personal channel.
+
+```
+conda install pytblis -c conda-forge -c chillenb
+```
 
 The pre-built wheels on PyPI use pthreads for multithreading. To reduce the
 overhead due to creating and joining threads, compile pytblis yourself and
-configure it to use OpenMP.
+configure it to use OpenMP, or use the conda packages.
 
-## Building
+`pip install pytblis` (not as performant)
+
+
+
+## Installation from source
 
 ### the easy way:
 
