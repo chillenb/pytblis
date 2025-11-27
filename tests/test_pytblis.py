@@ -256,11 +256,61 @@ def build_views(string, dimension_dict=None, dtype=np.float64, rng=None):
     return tuple(views)
 
 
+def build_views_some_complex(string, dimension_dict=None, dtype=np.float64, rng=None, complex_letter="g"):
+    if rng is None:
+        rng = np.random.default_rng(0)
+    views = []
+    if dimension_dict is None:
+        dimension_dict = _default_dim_dict
+
+    shapes = []
+    string = string.replace(" ", "")
+    terms = string.split("->")[0].split(",")
+    for term in terms:
+        dims = [dimension_dict[x] for x in term]
+        shapes.append(tuple(dims))
+
+    for shape, term in zip(shapes, terms):
+        if shape:
+            arr = rng.random(shape).astype(dtype)
+            if complex_letter in term:
+                arr = arr + 1j * rng.random(shape).astype(dtype)
+            views.append(arr)
+        else:
+            views.append(dtype(rng.random()))
+    return tuple(views)
+
+
+def build_views_multi_type(string, dimension_dict=None, dtypes=None, rng=None):
+    if rng is None:
+        rng = np.random.default_rng(0)
+    views = []
+    for shape, dtype in zip(build_shapes(string, dimension_dict=dimension_dict), dtypes):
+        if shape:
+            arr = rng.random(shape).astype(dtype)
+            if np.iscomplexobj(arr):
+                arr += 1j * rng.random(shape).astype(dtype)
+            views.append(arr)
+        else:
+            views.append(dtype(rng.random()))
+    return tuple(views)
+
+
 @pytest.mark.parametrize("string", tests)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_einsum(string, dtype):
     views = build_views(string, dtype=dtype)
     tblis_result = pytblis.einsum(string, *views)
+    numpy_result = np.einsum(string, *views)
+    assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+@pytest.mark.parametrize("string", tests)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_einsum_complex_real(string, dtype):
+    views = build_views_some_complex(string, dtype=dtype)
+    tblis_result = pytblis.einsum(string, *views, complex_real_contractions=True)
     numpy_result = np.einsum(string, *views)
     assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
@@ -378,5 +428,78 @@ def test_contract_with_out_alphabeta(string, scalar_type):
     C = random_array(numpy_result.shape, scalar_type, rng=rng)
     numpy_result += beta * C
     tblis_result = pytblis.contract(string, a, b, alpha=alpha, beta=beta, out=C)
+    assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+@pytest.mark.parametrize(
+    "scalar_types",
+    [
+        (np.float32, np.complex64),
+        (np.float64, np.complex128),
+        (np.complex64, np.float32),
+        (np.complex128, np.float64),
+    ],
+)
+@pytest.mark.parametrize("string", contraction_tests)
+@pytest.mark.parametrize("conja", [False, True])
+@pytest.mark.parametrize("conjb", [False, True])
+def test_contract_mixedtype(string, scalar_types, conja, conjb):
+    rng = np.random.default_rng(0)
+
+    alpha = random_scalar(False, rng=rng)
+    a, b = build_views_multi_type(string, dtypes=scalar_types, rng=rng)
+    aifconj = a.conj() if conja else a
+    bifconj = b.conj() if conjb else b
+    numpy_result = alpha * np.einsum(string, aifconj, bifconj)
+    tblis_result = pytblis.contract(string, a, b, alpha=alpha, conja=conja, conjb=conjb, complex_real_contractions=True)
+    assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+@pytest.mark.parametrize("scalar_type1", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("scalar_type2", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("string", contraction_tests)
+@pytest.mark.parametrize("conja", [False, True])
+@pytest.mark.parametrize("conjb", [False, True])
+def test_contract_mixedtype_alphabeta(string, scalar_type1, scalar_type2, conja, conjb):
+    rng = np.random.default_rng(0)
+    scalar_types = (scalar_type1, scalar_type2)
+    alpha = random_scalar(False, rng=rng)
+    beta = random_scalar(False, rng=rng)
+    a, b = build_views_multi_type(string, dtypes=scalar_types, rng=rng)
+    aifconj = a.conj() if conja else a
+    bifconj = b.conj() if conjb else b
+    numpy_result = alpha * np.einsum(string, aifconj, bifconj)
+    C = random_array(numpy_result.shape, np.result_type(*scalar_types), rng=rng)
+    numpy_result += beta * C
+    if a.real.dtype.type != b.real.dtype.type:
+        with pytest.raises(TypeError):
+            tblis_result = pytblis.contract(
+                string, a, b, alpha=alpha, beta=beta, out=C, conja=conja, conjb=conjb, complex_real_contractions=True
+            )
+        return
+    tblis_result = pytblis.contract(
+        string, a, b, alpha=alpha, beta=beta, out=C, conja=conja, conjb=conjb, complex_real_contractions=True
+    )
+    assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+@pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("string", single_array_tests)
+@pytest.mark.parametrize("conj", [False, True])
+def test_complexify(string, scalar_type, conj):
+    rng = np.random.default_rng(0)
+    a_real = build_views(string, dtype=scalar_type, rng=rng)[0]
+    a_imag = build_views(string, dtype=scalar_type, rng=rng)[0]
+    if scalar_type in [np.complex64, np.complex128]:
+        with pytest.raises(AssertionError, match="Inputs must be real arrays."):
+            pytblis.complexify(a_real, a_imag, conj=conj)
+        return
+    tblis_result = pytblis.complexify(a_real, a_imag, conj=conj)
+    numpy_result = a_real + 1j * a_imag
+    if conj:
+        numpy_result = numpy_result.conj()
     assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"

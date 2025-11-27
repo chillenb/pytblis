@@ -26,7 +26,7 @@ import numpy as np
 from .wrappers import contract, transpose_add
 
 
-def einsum(*operands, out=None, optimize="greedy", **kwargs):
+def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=False, **kwargs):
     """
     einsum(subscripts, *operands, out=None, order='K',
            optimize='greedy')
@@ -54,6 +54,9 @@ def einsum(*operands, out=None, optimize="greedy", **kwargs):
         Default is 'K'.
     optimize : {'greedy', 'optimal'}, default 'greedy'
         Controls the optimization strategy used to compute the contraction.
+    complex_real_contractions : bool, default False
+        If True, handle contractions between complex and real tensors by performing
+        separate contractions for the real and imaginary parts of the complex tensor.
 
     Returns
     -------
@@ -90,7 +93,13 @@ def einsum(*operands, out=None, optimize="greedy", **kwargs):
             out_kwarg = out
 
         if len(tmp_operands) == 2:
-            new_view = contract(einsum_str, *tmp_operands, out=out_kwarg, allow_partial_trace=True)
+            new_view = contract(
+                einsum_str,
+                *tmp_operands,
+                out=out_kwarg,
+                allow_partial_trace=True,
+                complex_real_contractions=complex_real_contractions,
+            )
 
         elif len(tmp_operands) == 1:
             # check if only a transpose

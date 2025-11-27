@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 
 from ._pytblis_impl import add, mult, shift
-from .typecheck import _accepted_types, _check_strides, _check_tblis_types, _valid_labels
+from .typecheck import _accepted_types, _check_strides, _check_tblis_types, _valid_labels, contraction_result_shape
 
 scalar = Union[float, complex]
 
@@ -100,7 +100,7 @@ def transpose_add(
     return out
 
 
-def contract(
+def contract_same_type(
     subscripts: str,
     a: npt.ArrayLike,
     b: npt.ArrayLike,
@@ -202,6 +202,8 @@ def contract(
         )
         raise ValueError(msg)
 
+    c_shape = contraction_result_shape(subscripts, a.shape, b.shape)
+
     if idx_redundant_a:
         # partial trace on a
         subscript_a_traced = "".join([i for i in subscript_a if i not in idx_redundant_a])
@@ -214,18 +216,6 @@ def contract(
         einsum_str_traced = f"{subscript_b}->{subscript_b_traced}"
         b = transpose_add(einsum_str_traced, b)
         subscript_b = subscript_b_traced
-
-    if not (set(subscript_a) | set(subscript_b)) >= set(subscript_c):
-        msg = f"Invalid subscripts '{subscripts}'"
-        raise ValueError(msg)
-    a_shape_dic = dict(zip(subscript_a, a.shape))
-    b_shape_dic = dict(zip(subscript_b, b.shape))
-    if any(a_shape_dic[x] != b_shape_dic[x] for x in set(subscript_a) & set(subscript_b)):
-        msg = f"Shape mismatch for subscripts '{subscripts}': {a.shape} {b.shape}"
-        raise ValueError(msg)
-
-    ab_shape_dic = {**a_shape_dic, **b_shape_dic}
-    c_shape = tuple(ab_shape_dic[x] for x in subscript_c)
 
     if out is None:
         out = np.empty(c_shape, dtype=scalar_type)
@@ -242,6 +232,186 @@ def contract(
         shift(out, subscript_c, alpha=0.0, beta=beta)
     else:
         mult(a, b, out, subscript_a, subscript_b, subscript_c, alpha=alpha, beta=beta, conja=conja, conjb=conjb)
+    return out
+
+
+def contract(
+    subscripts: str,
+    a: npt.ArrayLike,
+    b: npt.ArrayLike,
+    alpha: scalar = 1.0,
+    beta: scalar = 0.0,
+    out: Optional[npt.ArrayLike] = None,
+    conja: bool = False,
+    conjb: bool = False,
+    allow_partial_trace: bool = False,
+    complex_real_contractions: bool = False,
+) -> npt.ArrayLike:
+    """
+    Similar to `pytblis.contract`, but with support for contractions between complex and real tensors.
+    If one of the input tensors is complex and the other is real, we perform separate contractions for the
+    real and imaginary parts of the complex tensor.
+    C (stored in `out` if provided) is computed as:
+    C = alpha * einsum(subscripts, a, b) + beta * C if `out` is provided.
+
+    Parameters
+    ----------
+    subscripts : str
+        Subscripts defining the contraction.
+    a : array_like
+        First tensor operand.
+    b : array_like
+        Second tensor operand.
+    alpha : scalar, optional
+        Scaling factor for the product of `a` and `b`.
+    beta : scalar, optional
+        Scaling factor for the output tensor. Must be 0.0 if `out` is None.
+    conja: bool, optional
+        If True, conjugate the first tensor `a` before contraction. Alpha is not conjugated.
+    conjb: bool, optional
+        If True, conjugate the second tensor `b` before contraction. Beta is not conjugated.
+    allow_partial_trace : bool, optional
+        If True, handle redundant indices in subscripts for `a` and `b` by doing partial trace before contraction.
+    complex_real_contractions : bool, default False
+        If True, handle contractions between complex and real tensors by performing
+        separate contractions for the real and imaginary parts of the complex tensor.
+        alpha and beta must be real in this case.
+    out : array_like, optional
+        Output tensor to store the result.
+
+    Returns
+    -------
+    ndarray
+        Result of the tensor contraction.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from pytblis import contract_complex_real
+    >>> A = np.random.rand(3, 4, 5)
+    >>> B = np.random.rand(4, 5, 6).astype(np.complex128)
+    >>> result = contract_complex_real('ijk,jkl->il', A, B, alpha=2.0)
+    """
+
+    if not complex_real_contractions:
+        return contract_same_type(
+            subscripts,
+            a,
+            b,
+            alpha=alpha,
+            beta=beta,
+            out=out,
+            conja=conja,
+            conjb=conjb,
+            allow_partial_trace=allow_partial_trace,
+        )
+    a = np.asarray(a)
+    b = np.asarray(b)
+
+    if out is not None:
+        real_scalar_type = _check_tblis_types(a.real, b.real, out=out.real)
+    else:
+        real_scalar_type = _check_tblis_types(a.real, b.real)
+
+    if real_scalar_type is None:
+        raise TypeError("Input arrays and output array (if provided) must use the same IEEE floating point type.")
+
+    if np.iscomplexobj(a) and np.iscomplexobj(b):
+        return contract(subscripts, a, b, alpha, beta, out, conja, conjb, allow_partial_trace)
+    if (not np.iscomplexobj(a)) and (not np.iscomplexobj(b)):
+        return contract(subscripts, a, b, alpha, beta, out, conja, conjb, allow_partial_trace)
+
+    # exactly one of a or b is complex, so the result must be complex
+    if out is not None and not np.iscomplexobj(out):
+        msg = "Output array must have complex dtype when contracting a complex tensor with a real tensor."
+        raise ValueError(msg)
+
+    result_type = np.result_type(real_scalar_type, 1j).type
+    # allocate complex output if not provided
+
+    c_shape = contraction_result_shape(subscripts, a.shape, b.shape)
+    if out is None:
+        out = np.empty(c_shape, dtype=result_type)
+        assert beta == 0.0, "beta must be 0.0 if out is None"
+
+    assert alpha.imag == 0.0, "alpha must be real when contracting a complex tensor with a real tensor."
+    assert beta.imag == 0.0, "beta must be real when contracting a complex tensor with a real tensor."
+
+    if c_shape:
+        if np.iscomplexobj(a) and not np.iscomplexobj(b):
+            imag_fac = -1.0 if conja else 1.0
+            a_real = a.real
+            contract(
+                subscripts,
+                a_real,
+                b,
+                alpha=alpha,
+                beta=beta,
+                out=out.real,
+                conja=conja,
+                conjb=conjb,
+                allow_partial_trace=allow_partial_trace,
+            )
+            a_imag = a.imag
+            contract(
+                subscripts,
+                a_imag,
+                b,
+                alpha=alpha * imag_fac,
+                beta=beta,
+                out=out.imag,
+                conja=conja,
+                conjb=conjb,
+                allow_partial_trace=allow_partial_trace,
+            )
+        else:
+            imag_fac = -1.0 if conjb else 1.0
+            b_real = b.real
+            contract(
+                subscripts,
+                a,
+                b_real,
+                alpha=alpha,
+                beta=beta,
+                out=out.real,
+                conja=conja,
+                conjb=conjb,
+                allow_partial_trace=allow_partial_trace,
+            )
+            b_imag = b.imag
+            contract(
+                subscripts,
+                a,
+                b_imag,
+                alpha=alpha * imag_fac,
+                beta=beta,
+                out=out.imag,
+                conja=conja,
+                conjb=conjb,
+                allow_partial_trace=allow_partial_trace,
+            )
+    # handle scalar output
+    # c_shape == ()
+    elif np.iscomplexobj(a) and not np.iscomplexobj(b):
+        imag_fac = -1.0 if conja else 1.0
+        out = (
+            beta * out
+            + alpha * contract(subscripts, a.real, b, conja=conja, conjb=conjb, allow_partial_trace=allow_partial_trace)
+            + 1j
+            * alpha
+            * imag_fac
+            * contract(subscripts, a.imag, b, conja=conja, conjb=conjb, allow_partial_trace=allow_partial_trace)
+        )
+    else:
+        imag_fac = -1.0 if conjb else 1.0
+        out = (
+            beta * out
+            + alpha * contract(subscripts, a, b.real, conja=conja, conjb=conjb, allow_partial_trace=allow_partial_trace)
+            + 1j
+            * alpha
+            * imag_fac
+            * contract(subscripts, a, b.imag, conja=conja, conjb=conjb, allow_partial_trace=allow_partial_trace)
+        )
     return out
 
 

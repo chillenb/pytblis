@@ -115,12 +115,23 @@ Some additional documentation (work in progress) is available at
 ## Limitations
 
 Supported datatypes: `np.float32`, `np.float64`, `np.complex64`,
-`np.complex128`. Mixing arrays of different types isn't yet supported. I may add
-a workaround for real-complex tensor contraction.
+`np.complex128`. Mixing arrays of different precisions isn't yet supported.
 
 Arrays with negative or zero stride are not supported and will cause pytblis to
 fall back to NumPy (for `einsum` and `contract`) or raise an error (all other
 functions).
+
+## New features
+
+### Mixed-complex/real contractions
+
+New in version v0.0.11: `pytblis.contract` fully supports contractions between
+complex and/or real tensors of the same floating point precision, provided that
+`alpha` and `beta` are both real. This just contracts the real and imaginary
+parts separately with TBLIS. It's turned off by default because it's still
+experimental, but you can enable it in `pytblis.contract` and `pytblis.einsum`
+by passing `complex_real_contractions=True`. Otherwise, all mixed-type
+contractions use NumPy.
 
 ## Research
 

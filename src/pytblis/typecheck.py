@@ -30,3 +30,20 @@ def _check_tblis_types(*tensors, out=None):
     if out is not None and out.dtype.type != first_type:
         return None
     return first_type
+
+
+def contraction_result_shape(subscripts, a_shape, b_shape):
+    subscripts = subscripts.replace(" ", "")
+    input_str, subscript_c = subscripts.split("->")
+    subscript_a, subscript_b = input_str.split(",")
+    if not (set(subscript_a) | set(subscript_b)) >= set(subscript_c):
+        msg = f"Invalid subscripts '{subscripts}'"
+        raise ValueError(msg)
+    a_shape_dic = dict(zip(subscript_a, a_shape))
+    b_shape_dic = dict(zip(subscript_b, b_shape))
+    if any(a_shape_dic[x] != b_shape_dic[x] for x in set(subscript_a) & set(subscript_b)):
+        msg = f"Shape mismatch for subscripts '{subscripts}': {a_shape} {b_shape}"
+        raise ValueError(msg)
+
+    ab_shape_dic = {**a_shape_dic, **b_shape_dic}
+    return tuple(ab_shape_dic[x] for x in subscript_c)
