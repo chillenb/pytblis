@@ -17,40 +17,6 @@ maxed out your home equity line of credit?
 Set your CPU on fire with
 [TBLIS](https://github.com/MatthewsResearchGroup/tblis)!
 
-## Installation
-
-I will try to get this package added to conda-forge. In the meantime, conda
-packages may be downloaded from my personal channel.
-
-```
-conda install pytblis -c conda-forge -c chillenb
-```
-
-The pre-built wheels on PyPI use pthreads for multithreading. To reduce the
-overhead due to creating and joining threads, compile pytblis yourself and
-configure it to use OpenMP, or use the conda packages.
-
-`pip install pytblis` (not as performant)
-
-## Installation from source
-
-### the easy way:
-
-`pip install --no-binary pytblis pytblis`
-
-The default compile options will give good performance. OpenMP is the default
-thread model when building from source. You can pass additional options to CMake
-via `CMAKE_ARGS`, change the thread model, compile for other
-[CPU microarchitectures](https://github.com/flame/blis/blob/master/docs/ConfigurationHowTo.md#configuration-families),
-etc.
-
-### the hard way:
-
-1. Install TBLIS.
-2. Run `CMAKE_ARGS="-DTBLIS_ROOT=wherever_tblis_is_installed" pip install .`
-
-See [dev_install.sh](dev_install.sh) for an example. This script installs TBLIS
-in `./local_tblis_prefix` and then links pytblis against it.
 
 ## Usage
 
@@ -132,6 +98,48 @@ parts separately with TBLIS. It's turned off by default because it's still
 experimental, but you can enable it in `pytblis.contract` and `pytblis.einsum`
 by passing `complex_real_contractions=True`. Otherwise, all mixed-type
 contractions use NumPy.
+
+
+## Installation
+
+I will try to get this package added to conda-forge. In the meantime, conda
+packages may be downloaded from my personal channel.
+
+```
+conda install pytblis -c conda-forge -c chillenb
+```
+
+The pre-built wheels on PyPI use pthreads for multithreading. To reduce the
+overhead due to creating and joining threads, compile pytblis yourself and
+configure it to use OpenMP, or use the conda packages.
+
+`pip install pytblis` (not as performant)
+
+### About OpenBLAS
+
+[Don't use OpenBLAS configured with pthreads](https://github.com/pyscf/pyscf/discussions/3011#discussioncomment-14782315). It causes oversubscription when used with other multithreaded libraries, in particular anything that uses OpenMP.
+Instead, use MKL (`libblas=*=*mkl`) or the [OpenMP variant](https://conda-forge.org/news/2020/07/17/conda-forge-is-building-openblas-with-both-pthreads-and-openmp-on-linux/) of OpenBLAS (`libopenblas=*=*openmp*`).
+
+
+### Installation from source
+
+#### the easy way:
+
+`pip install --no-binary pytblis pytblis`
+
+The default compile options will give good performance. OpenMP is the default
+thread model when building from source. You can pass additional options to CMake
+via `CMAKE_ARGS`, change the thread model, compile for other
+[CPU microarchitectures](https://github.com/flame/blis/blob/master/docs/ConfigurationHowTo.md#configuration-families),
+etc.
+
+#### the hard way:
+
+1. Install TBLIS.
+2. Run `CMAKE_ARGS="-DTBLIS_ROOT=wherever_tblis_is_installed" pip install .`
+
+See [dev_install.sh](dev_install.sh) for an example. This script installs TBLIS
+in `./local_tblis_prefix` and then links pytblis against it.
 
 ## Research
 
