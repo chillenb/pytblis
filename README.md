@@ -17,7 +17,6 @@ maxed out your home equity line of credit?
 Set your CPU on fire with
 [TBLIS](https://github.com/MatthewsResearchGroup/tblis)!
 
-
 ## Usage
 
 `pytblis.einsum` and `pytblis.tensordot` are drop-in replacements for
@@ -99,7 +98,6 @@ experimental, but you can enable it in `pytblis.contract` and `pytblis.einsum`
 by passing `complex_real_contractions=True`. Otherwise, all mixed-type
 contractions use NumPy.
 
-
 ## Installation
 
 I will try to get this package added to conda-forge. In the meantime, conda
@@ -117,9 +115,11 @@ configure it to use OpenMP, or use the conda packages.
 
 ### About OpenBLAS
 
-[Don't use OpenBLAS configured with pthreads](https://github.com/pyscf/pyscf/discussions/3011#discussioncomment-14782315). It causes oversubscription when used with other multithreaded libraries, in particular anything that uses OpenMP.
-Instead, use MKL (`libblas=*=*mkl`) or the [OpenMP variant](https://conda-forge.org/news/2020/07/17/conda-forge-is-building-openblas-with-both-pthreads-and-openmp-on-linux/) of OpenBLAS (`libopenblas=*=*openmp*`).
-
+[Don't use OpenBLAS configured with pthreads](https://github.com/pyscf/pyscf/discussions/3011#discussioncomment-14782315).
+It causes oversubscription when used with other multithreaded libraries, in
+particular anything that uses OpenMP. Instead, use MKL (`libblas=*=*mkl`) or the
+[OpenMP variant](https://conda-forge.org/news/2020/07/17/conda-forge-is-building-openblas-with-both-pthreads-and-openmp-on-linux/)
+of OpenBLAS (`libopenblas=*=*openmp*`).
 
 ### Installation from source
 
@@ -155,6 +155,9 @@ Python bindings.
 
 The implementation of einsum and the tests are modified versions of those from
 [opt_einsum](https://github.com/dgasmith/opt_einsum).
+
+pytblis was developed in the [Zhu Group](https://www.tianyuzhu.org/), Department
+of Chemistry, Yale University.
 
 <!-- SPHINX-START -->
 
