@@ -518,3 +518,44 @@ def test_complexify(string, scalar_type, conj):
         numpy_result = numpy_result.conj()
     assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+@pytest.mark.parametrize("output_order", ["C", "F"])
+def test_default_array_order_context_manager(output_order):
+    rng = np.random.default_rng(0)
+    a = rng.random((3, 4, 5))
+    b = rng.random((4, 5, 6))
+
+    with pytblis.use_default_array_order(output_order):
+        tblis_result = pytblis.einsum("ijk,jkl->il", a, b)
+
+    numpy_result = np.einsum("ijk,jkl->il", a, b, order=output_order)
+    assert tblis_result.shape == numpy_result.shape, "Shape mismatch in default array order test."
+    assert tblis_result.strides == numpy_result.strides, "Strides mismatch in default array order test."
+    assert np.allclose(tblis_result, numpy_result), "Values mismatch in default array order test."
+
+    with pytblis.use_default_array_order(output_order):
+        tblis_result = pytblis.contract("ijk,jkl->il", a, b)
+
+    assert tblis_result.shape == numpy_result.shape, "Shape mismatch in default array order test."
+    assert tblis_result.strides == numpy_result.strides, "Strides mismatch in default array order test."
+    assert np.allclose(tblis_result, numpy_result), "Values mismatch in default array order test."
+
+
+@pytest.mark.parametrize("output_order", ["C", "F"])
+def test_default_array_order_transpose_add(output_order):
+    rng = np.random.default_rng(0)
+    a = rng.random((3, 4, 5))
+
+    perm = (2, 0, 1)
+    string_perm = "".join(np.array(list("abc"))[list(perm)])
+    command_string = f"abc->{string_perm}"
+
+    numpy_result = np.transpose(a, axes=perm).copy(order=output_order)
+
+    with pytblis.use_default_array_order(output_order):
+        tblis_result = pytblis.transpose_add(command_string, a, alpha=1.0)
+
+    assert tblis_result.shape == numpy_result.shape, "Shape mismatch in default array order transpose_add test."
+    assert tblis_result.strides == numpy_result.strides, "Strides mismatch in default array order transpose_add test."
+    assert np.allclose(tblis_result, numpy_result), "Values mismatch in default array order transpose_add test."
