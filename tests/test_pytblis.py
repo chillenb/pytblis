@@ -330,6 +330,21 @@ def test_ascontiguousarray(string, dtype):
     tblis_result = pytblis.ascontiguousarray(arr)
     numpy_result = np.ascontiguousarray(arr)
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+    assert tblis_result.strides == numpy_result.strides, f"Strides mismatch for string: {string}"
+
+
+@pytest.mark.parametrize("string", single_array_tests)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_asfortranarray(string, dtype):
+    rng = np.random.default_rng(0)
+    views = build_views(string, dtype=dtype)
+    arr = views[0]
+
+    arr = np.transpose(arr, axes=rng.permutation(len(arr.shape)))
+    tblis_result = pytblis.asfortranarray(arr)
+    numpy_result = np.asfortranarray(arr)
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+    assert tblis_result.strides == numpy_result.strides, f"Strides mismatch for string: {string}"
 
 
 @pytest.mark.parametrize("string", single_array_tests)

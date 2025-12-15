@@ -454,3 +454,44 @@ def ascontiguousarray(a):
     a_inds = "".join(a_inds)
     add(a, out, a_inds, a_inds, alpha=1.0, beta=0.0)
     return out
+
+
+def asfortranarray(a):
+    """Parallel transpose the input to F-contiguous layout.
+
+    Parameters
+    ----------
+    a : array_like
+        Input array.
+
+    Returns
+    -------
+    ndarray
+        Fortran-order array.
+    """
+    a = np.asarray(a)
+    if a.flags.f_contiguous:
+        return a
+
+    if not _check_strides(a):
+        warnings.warn(
+            f"Input tensor of shape {a.shape} has non-positive strides: {a.strides}. Falling back to numpy asfortranarray.",
+            stacklevel=2,
+        )
+        return np.asfortranarray(a)
+
+    if a.dtype.type not in _accepted_types:
+        warnings.warn(
+            "TBLIS only supports float32, float64, complex64, and complex128. Falling back to numpy asfortranarray.",
+            stacklevel=2,
+        )
+        return np.asfortranarray(a)
+
+    out = np.empty(a.shape, dtype=a.dtype, order="F")
+    assert len(a.shape) < len(_valid_labels), (
+        f"a.ndim is {len(a.shape)}, but only {len(_valid_labels)} labels are valid."
+    )
+    a_inds = _valid_labels[: len(a.shape)]
+    a_inds = "".join(a_inds)
+    add(a, out, a_inds, a_inds, alpha=1.0, beta=0.0)
+    return out
