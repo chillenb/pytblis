@@ -2,6 +2,7 @@ from typing import Union
 
 import numpy as np
 
+from .defaultorder import get_default_array_order
 from .typecheck import _check_strides, _check_tblis_types
 from .wrappers import transpose_add
 
@@ -49,7 +50,7 @@ def complexify(realpart, imagpart, conj=False, scale=1.0, out=None):
     inds = "abcdefghijklmnopqrstuvwxyz"[:ndim]
     result_type = np.result_type(realpart.dtype, 1j).type
     if out is None:
-        out = np.empty(shape, dtype=result_type)
+        out = np.empty(shape, dtype=result_type, order=get_default_array_order())
 
     if is_trivial:
         return np.asarray(realpart) + np.asarray(imagpart) * 1j
