@@ -547,11 +547,9 @@ def test_default_array_order_transpose_add(output_order):
     rng = np.random.default_rng(0)
     a = rng.random((3, 4, 5))
 
-    perm = (2, 0, 1)
-    string_perm = "".join(np.array(list("abc"))[list(perm)])
-    command_string = f"abc->{string_perm}"
+    command_string = "abc->cab"
 
-    numpy_result = np.transpose(a, axes=perm).copy(order=output_order)
+    numpy_result = a.transpose((2, 0, 1)).copy(order=output_order)
 
     with pytblis.use_default_array_order(output_order):
         tblis_result = pytblis.transpose_add(command_string, a, alpha=1.0)
