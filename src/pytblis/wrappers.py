@@ -5,6 +5,7 @@ import numpy as np
 import numpy.typing as npt
 
 from ._pytblis_impl import add, mult, shift
+from .defaultorder import get_default_array_order
 from .typecheck import _accepted_types, _check_strides, _check_tblis_types, _valid_labels, contraction_result_shape
 
 scalar = Union[float, complex]
@@ -83,7 +84,7 @@ def transpose_add(
     b_shape = tuple(a_shape_dic[x] for x in b_idx)
 
     if out is None:
-        out = np.empty(b_shape, dtype=scalar_type)
+        out = np.empty(b_shape, dtype=scalar_type, order=get_default_array_order())
         assert beta == 0.0, "beta must be 0.0 if out is None"
     else:
         out = np.asarray(out)
@@ -218,7 +219,7 @@ def contract_same_type(
         subscript_b = subscript_b_traced
 
     if out is None:
-        out = np.empty(c_shape, dtype=scalar_type)
+        out = np.empty(c_shape, dtype=scalar_type, order=get_default_array_order())
         assert beta == 0.0, "beta must be 0.0 if out is None"
     else:
         out = np.asarray(out)
@@ -331,7 +332,7 @@ def contract(
 
     c_shape = contraction_result_shape(subscripts, a.shape, b.shape)
     if out is None:
-        out = np.empty(c_shape, dtype=result_type)
+        out = np.empty(c_shape, dtype=result_type, order=get_default_array_order())
         assert beta == 0.0, "beta must be 0.0 if out is None"
 
     assert alpha.imag == 0.0, "alpha must be real when contracting a complex tensor with a real tensor."
