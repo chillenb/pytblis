@@ -504,7 +504,8 @@ def test_contract_mixedtype_alphabeta(string, scalar_type1, scalar_type2, conja,
 @pytest.mark.parametrize("scalar_type", [np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("string", single_array_tests)
 @pytest.mark.parametrize("conj", [False, True])
-def test_complexify(string, scalar_type, conj):
+@pytest.mark.parametrize("default_order", ["C", "F"])
+def test_complexify(string, scalar_type, conj, default_order):
     rng = np.random.default_rng(0)
     a_real = build_views(string, dtype=scalar_type, rng=rng)[0]
     a_imag = build_views(string, dtype=scalar_type, rng=rng)[0]
@@ -512,11 +513,14 @@ def test_complexify(string, scalar_type, conj):
         with pytest.raises(AssertionError, match="Inputs must be real arrays."):
             pytblis.complexify(a_real, a_imag, conj=conj)
         return
-    tblis_result = pytblis.complexify(a_real, a_imag, conj=conj)
+    with pytblis.use_default_array_order(default_order):
+        tblis_result = pytblis.complexify(a_real, a_imag, conj=conj)
     numpy_result = a_real + 1j * a_imag
     if conj:
         numpy_result = numpy_result.conj()
+    numpy_result = np.array(numpy_result, order=default_order)
     assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
+    assert tblis_result.strides == numpy_result.strides, f"Strides mismatch for string: {string}"
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
 
 
@@ -557,3 +561,18 @@ def test_default_array_order_transpose_add(output_order):
     assert tblis_result.shape == numpy_result.shape, "Shape mismatch in default array order transpose_add test."
     assert tblis_result.strides == numpy_result.strides, "Strides mismatch in default array order transpose_add test."
     assert np.allclose(tblis_result, numpy_result), "Values mismatch in default array order transpose_add test."
+
+
+@pytest.mark.parametrize("output_order", ["C", "F"])
+def test_default_array_order_tensordot(output_order):
+    rng = np.random.default_rng(0)
+    a = rng.random((3, 4, 5))
+    b = rng.random((5, 6, 7))
+
+    with pytblis.use_default_array_order(output_order):
+        tblis_result = pytblis.tensordot(a, b, axes=([2], [0]))
+
+    numpy_result = np.tensordot(a, b, axes=([2], [0])).copy(order=output_order)
+    assert tblis_result.shape == numpy_result.shape, "Shape mismatch in default array order tensordot test."
+    assert tblis_result.strides == numpy_result.strides, "Strides mismatch in default array order tensordot test."
+    assert np.allclose(tblis_result, numpy_result), "Values mismatch in default array order tensordot test."

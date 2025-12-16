@@ -21,6 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from contextlib import nullcontext
+
 import numpy as np
 
 from .defaultorder import _default_order, get_default_array_order, use_default_array_order
@@ -50,8 +52,7 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
         Controls the memory layout of the output. 'C' means it should
         be C contiguous. 'F' means it should be Fortran contiguous,
         'A' means it should be 'F' if the inputs are all 'F', 'C' otherwise.
-        'K' means it should be as close to the layout as the inputs as
-        is possible, including arbitrarily permuted axes.
+        'K' is ignored, for now.
         Default is 'C'.
     optimize : {'greedy', 'optimal'}, default 'greedy'
         Controls the optimization strategy used to compute the contraction.
@@ -81,7 +82,8 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
     # Handle order kwarg for output array, c_einsum allows mixed case
     order_given = "order" in kwargs
     output_order = kwargs.pop("order", _default_order.get() or "C")
-    assert output_order.upper() in ("C", "F", "A", "K"), "order must be one of 'C', 'F', 'A', or 'K'"
+    if output_order.upper() not in ("C", "F", "A", "K"):
+        raise ValueError("order must be one of 'C', 'F', 'A', or 'K'")
     if output_order.upper() == "A":
         output_order = "F" if all(arr.flags.f_contiguous for arr in operands) else "C"
     elif output_order.upper() == "K":
@@ -102,17 +104,10 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
         if handle_out:
             out_kwarg = out
 
+        order_context = use_default_array_order(output_order) if output_order_matters else nullcontext()
+
         if len(tmp_operands) == 2:
-            if output_order_matters:
-                with use_default_array_order(output_order):
-                    new_view = contract(
-                        einsum_str,
-                        *tmp_operands,
-                        out=out_kwarg,
-                        allow_partial_trace=True,
-                        complex_real_contractions=complex_real_contractions,
-                    )
-            else:
+            with order_context:
                 new_view = contract(
                     einsum_str,
                     *tmp_operands,
@@ -129,11 +124,9 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
                 # only a transpose, use numpy for this (should return view)
                 new_view = np.einsum(einsum_str, tmp_operands[0], out=out_kwarg, **kwargs)
             # may involve a trace or replication, use tblis transpose_add for this
-            elif output_order_matters:
-                with use_default_array_order(output_order):
-                    new_view = transpose_add(einsum_str, tmp_operands[0], out=out_kwarg, **kwargs)
             else:
-                new_view = transpose_add(einsum_str, tmp_operands[0], out=out_kwarg, **kwargs)
+                with order_context:
+                    new_view = transpose_add(einsum_str, tmp_operands[0], out=out_kwarg, **kwargs)
         else:
             # fallback to numpy einsum
             # e.g. contractions of 3 tensors
