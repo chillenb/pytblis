@@ -81,7 +81,7 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
 
     # Handle order kwarg for output array, c_einsum allows mixed case
     order_given = "order" in kwargs
-    output_order = kwargs.pop("order", _default_order.get() or "C")
+    output_order = kwargs.get("order", _default_order.get() or "C")
     if output_order.upper() not in ("C", "F", "A", "K"):
         raise ValueError("order must be one of 'C', 'F', 'A', or 'K'")
     if output_order.upper() == "A":
@@ -126,7 +126,7 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
             # may involve a trace or replication, use tblis transpose_add for this
             else:
                 with order_context:
-                    new_view = transpose_add(einsum_str, tmp_operands[0], out=out_kwarg, **kwargs)
+                    new_view = transpose_add(einsum_str, tmp_operands[0], out=out_kwarg)
         else:
             # fallback to numpy einsum
             # e.g. contractions of 3 tensors

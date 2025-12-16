@@ -6,11 +6,12 @@ _default_order = ContextVar("default_order", default=None)
 
 
 @contextmanager
-def use_default_array_order(order: str):
+def use_default_array_order(order: Literal["C", "F"]):
     """Create a temporary context in which pytblis creates new arrays
     with the specified memory order (either 'C' or 'F').
     """
-    assert order in ("C", "F"), "order must be either 'C' or 'F'"
+    if order not in ("C", "F"):
+        raise ValueError("order must be one of 'C' or 'F'")
     prev_order = _default_order.get()
     _default_order.set(order)
     try:
