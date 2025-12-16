@@ -21,8 +21,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from contextlib import nullcontext
+
 import numpy as np
 
+from .defaultorder import _default_order, get_default_array_order, use_default_array_order
 from .wrappers import contract, transpose_add
 
 
@@ -49,9 +52,8 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
         Controls the memory layout of the output. 'C' means it should
         be C contiguous. 'F' means it should be Fortran contiguous,
         'A' means it should be 'F' if the inputs are all 'F', 'C' otherwise.
-        'K' means it should be as close to the layout as the inputs as
-        is possible, including arbitrarily permuted axes.
-        Default is 'K'.
+        'K' is ignored, for now.
+        Default is 'C'.
     optimize : {'greedy', 'optimal'}, default 'greedy'
         Controls the optimization strategy used to compute the contraction.
     complex_real_contractions : bool, default False
@@ -78,9 +80,15 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
     operands, contraction_list = np.einsum_path(*operands, optimize=optimize, einsum_call=True)
 
     # Handle order kwarg for output array, c_einsum allows mixed case
-    output_order = kwargs.pop("order", "K")
+    order_given = "order" in kwargs
+    output_order = kwargs.get("order", _default_order.get() or "C")
+    if output_order.upper() not in ("C", "F", "A", "K"):
+        raise ValueError("order must be one of 'C', 'F', 'A', or 'K'")
     if output_order.upper() == "A":
         output_order = "F" if all(arr.flags.f_contiguous for arr in operands) else "C"
+    elif output_order.upper() == "K":
+        # ignore K.
+        output_order = get_default_array_order()
 
     # Start contraction loop
     for num, contraction in enumerate(contraction_list):
@@ -88,18 +96,22 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
         tmp_operands = [operands.pop(x) for x in inds]
         # Do we need to deal with the output?
         handle_out = specified_out and ((num + 1) == len(contraction_list))
+        output_order_matters = ((num + 1) == len(contraction_list)) and order_given and not handle_out
         out_kwarg = None
         if handle_out:
             out_kwarg = out
 
+        order_context = use_default_array_order(output_order) if output_order_matters else nullcontext()
+
         if len(tmp_operands) == 2:
-            new_view = contract(
-                einsum_str,
-                *tmp_operands,
-                out=out_kwarg,
-                allow_partial_trace=True,
-                complex_real_contractions=complex_real_contractions,
-            )
+            with order_context:
+                new_view = contract(
+                    einsum_str,
+                    *tmp_operands,
+                    out=out_kwarg,
+                    allow_partial_trace=True,
+                    complex_real_contractions=complex_real_contractions,
+                )
 
         elif len(tmp_operands) == 1:
             # check if only a transpose
@@ -108,15 +120,13 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
             if sorted(subscript_a) == sorted(subscript_b):
                 # only a transpose, use numpy for this (should return view)
                 new_view = np.einsum(einsum_str, tmp_operands[0], out=out_kwarg, **kwargs)
+            # may involve a trace or replication, use tblis transpose_add for this
             else:
-                # may involve a trace or replication, use tblis transpose_add for this
-                new_view = transpose_add(einsum_str, tmp_operands[0], out=out_kwarg, **kwargs)
+                with order_context:
+                    new_view = transpose_add(einsum_str, tmp_operands[0], out=out_kwarg)
         else:
             # fallback to numpy einsum
             # e.g. contractions of 3 tensors
-            out_kwarg = None
-            if handle_out:
-                out_kwarg = out
             new_view = np.einsum(einsum_str, *tmp_operands, out=out_kwarg, **kwargs)
 
         # Append new items and dereference what we can

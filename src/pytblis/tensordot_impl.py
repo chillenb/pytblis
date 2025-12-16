@@ -35,6 +35,7 @@ import warnings
 import numpy as np
 
 from ._pytblis_impl import mult
+from .defaultorder import get_default_array_order
 from .typecheck import _accepted_types, _valid_labels
 
 
@@ -158,7 +159,7 @@ def tensordot(a, b, axes=2):
     inds_C = "".join(inds_C)
 
     restype = np.result_type(a, b)
-    c = np.empty(outshape, dtype=restype)
+    c = np.empty(outshape, dtype=restype, order=get_default_array_order())
 
     mult(a, b, c, inds_A, inds_B, inds_C)
     return c
