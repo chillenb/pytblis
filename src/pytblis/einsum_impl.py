@@ -84,7 +84,10 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
 
     # Start contraction loop
     for num, contraction in enumerate(contraction_list):
-        inds, idx_rm, einsum_str, remaining, blas = contraction
+        if len(contraction) == 3:  # numpy 2.4.0 and newer.
+            inds, einsum_str, _ = contraction
+        else:  # numpy 2.3.x and older.
+            inds, _, einsum_str, _, _ = contraction
         tmp_operands = [operands.pop(x) for x in inds]
         # Do we need to deal with the output?
         handle_out = specified_out and ((num + 1) == len(contraction_list))
