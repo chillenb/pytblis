@@ -27,9 +27,10 @@ import numpy as np
 
 from .defaultorder import _default_order, get_default_array_order, use_default_array_order
 from .wrappers import contract, transpose_add
+from .numpy_einsumpath import einsum_path
 
 
-def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=False, **kwargs):
+def einsum(*operands, out=None, optimize=True, complex_real_contractions=True, **kwargs):
     """
     einsum(subscripts, *operands, out=None, order='K',
            optimize='greedy')
@@ -54,11 +55,13 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
         'A' means it should be 'F' if the inputs are all 'F', 'C' otherwise.
         'K' is ignored, for now.
         Default is 'C'.
-    optimize : {'greedy', 'optimal'}, default 'greedy'
+    optimize : {False, True, 'greedy', 'optimal'}, default True
         Controls the optimization strategy used to compute the contraction.
-    complex_real_contractions : bool, default False
+    complex_real_contractions : bool, default True
         If True, handle contractions between complex and real tensors by performing
         separate contractions for the real and imaginary parts of the complex tensor.
+        This avoids NumPy type promotion if the complex and real tensors
+        have the same precision (e.g., complex128 and float64).
 
     Returns
     -------
@@ -66,7 +69,8 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
         The calculation based on the Einstein summation convention.
     """
     specified_out = out is not None
-    assert optimize in ("greedy", "optimal"), "optimize must be 'greedy' or 'optimal'"
+    if optimize not in (False, True, "greedy", "optimal"):
+        raise ValueError("optimize must be one of False, True, 'greedy', or 'optimal'")
 
     # Check the kwargs to avoid a more cryptic error later, without having to
     # repeat default values here
@@ -76,37 +80,41 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
         msg = f"Did not understand the following kwargs: {unknown_kwargs}"
         raise TypeError(msg)
 
-    # Build the contraction list and operand
-    operands, contraction_list = np.einsum_path(*operands, optimize=optimize, einsum_call=True)
+    # calculate contraction path
+    operands, contraction_list = einsum_path(*operands, optimize=optimize, einsum_call=True)
 
     # Handle order kwarg for output array, c_einsum allows mixed case
     order_given = "order" in kwargs
-    output_order = kwargs.get("order", _default_order.get() or "C")
-    if output_order.upper() not in ("C", "F", "A", "K"):
+    output_order = kwargs.get("order", _default_order.get())
+    if output_order not in ("C", "F", "A", "K"):
         raise ValueError("order must be one of 'C', 'F', 'A', or 'K'")
-    if output_order.upper() == "A":
+    if output_order == "A":
         output_order = "F" if all(arr.flags.f_contiguous for arr in operands) else "C"
-    elif output_order.upper() == "K":
+    elif output_order == "K":
         # ignore K.
         output_order = get_default_array_order()
 
     # Start contraction loop
     for num, contraction in enumerate(contraction_list):
-        if len(contraction) == 3:  # numpy 2.4.0 and newer.
-            inds, einsum_str, _ = contraction
-        else:  # numpy 2.3.x and older.
-            inds, _, einsum_str, _, _ = contraction
+        inds, einsum_str, _ = contraction
         tmp_operands = [operands.pop(x) for x in inds]
+
         # Do we need to deal with the output?
         handle_out = specified_out and ((num + 1) == len(contraction_list))
-        output_order_matters = ((num + 1) == len(contraction_list)) and order_given and not handle_out
-        out_kwarg = None
+
         if handle_out:
             out_kwarg = out
+        else:
+            out_kwarg = None
 
-        order_context = use_default_array_order(output_order) if output_order_matters else nullcontext()
+        if ((num + 1) == len(contraction_list)) and order_given:
+            # Set the requested output order on the final contraction.
+            order_context = use_default_array_order(output_order)
+        else:
+            order_context = nullcontext()
 
         if len(tmp_operands) == 2:
+            # two operands: use contract
             with order_context:
                 new_view = contract(
                     einsum_str,
@@ -118,7 +126,6 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
 
         elif len(tmp_operands) == 1:
             # check if only a transpose
-            einsum_str = einsum_str.replace(" ", "")
             subscript_a, subscript_b = einsum_str.split("->")
             if sorted(subscript_a) == sorted(subscript_b):
                 # only a transpose, use numpy for this (should return view)
@@ -128,8 +135,7 @@ def einsum(*operands, out=None, optimize="greedy", complex_real_contractions=Fal
                 with order_context:
                     new_view = transpose_add(einsum_str, tmp_operands[0], out=out_kwarg)
         else:
-            # fallback to numpy einsum
-            # e.g. contractions of 3 tensors
+            # 3 or more operands, fall back to numpy einsum
             new_view = np.einsum(einsum_str, *tmp_operands, out=out_kwarg, **kwargs)
 
         # Append new items and dereference what we can
