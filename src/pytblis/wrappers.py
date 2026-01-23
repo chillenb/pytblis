@@ -246,7 +246,7 @@ def contract(
     conja: bool = False,
     conjb: bool = False,
     allow_partial_trace: bool = False,
-    complex_real_contractions: bool = False,
+    complex_real_contractions: bool = True,
 ) -> npt.ArrayLike:
     """
     Similar to `pytblis.contract`, but with support for contractions between complex and real tensors.
@@ -273,7 +273,7 @@ def contract(
         If True, conjugate the second tensor `b` before contraction. Beta is not conjugated.
     allow_partial_trace : bool, optional
         If True, handle redundant indices in subscripts for `a` and `b` by doing partial trace before contraction.
-    complex_real_contractions : bool, default False
+    complex_real_contractions : bool, default True
         If True, handle contractions between complex and real tensors by performing
         separate contractions for the real and imaginary parts of the complex tensor.
         alpha and beta must be real in this case.
@@ -317,10 +317,8 @@ def contract(
     if real_scalar_type is None:
         raise TypeError("Input arrays and output array (if provided) must use the same IEEE floating point type.")
 
-    if np.iscomplexobj(a) and np.iscomplexobj(b):
-        return contract(subscripts, a, b, alpha, beta, out, conja, conjb, allow_partial_trace)
-    if (not np.iscomplexobj(a)) and (not np.iscomplexobj(b)):
-        return contract(subscripts, a, b, alpha, beta, out, conja, conjb, allow_partial_trace)
+    if np.iscomplexobj(a) and np.iscomplexobj(b) or (not np.iscomplexobj(a)) and (not np.iscomplexobj(b)):
+        return contract_same_type(subscripts, a, b, alpha, beta, out, conja, conjb, allow_partial_trace)
 
     # exactly one of a or b is complex, so the result must be complex
     if out is not None and not np.iscomplexobj(out):
