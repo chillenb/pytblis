@@ -490,13 +490,9 @@ def test_contract_mixedtype_alphabeta(string, scalar_type1, scalar_type2, conja,
     numpy_result += beta * C
     if a.real.dtype.type != b.real.dtype.type:
         with pytest.raises(TypeError):
-            tblis_result = pytblis.contract(
-                string, a, b, alpha=alpha, beta=beta, out=C, conja=conja, conjb=conjb
-            )
+            tblis_result = pytblis.contract(string, a, b, alpha=alpha, beta=beta, out=C, conja=conja, conjb=conjb)
         return
-    tblis_result = pytblis.contract(
-        string, a, b, alpha=alpha, beta=beta, out=C, conja=conja, conjb=conjb
-    )
+    tblis_result = pytblis.contract(string, a, b, alpha=alpha, beta=beta, out=C, conja=conja, conjb=conjb)
     assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
 

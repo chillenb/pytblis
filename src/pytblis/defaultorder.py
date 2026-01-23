@@ -1,8 +1,8 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
+
 # You really shouldn't be mixing pytblis with Python threading,
 # but we'll use contextvars just in case.
-
 from typing import Literal, Union
 
 _default_order: ContextVar[Literal["C", "F"]] = ContextVar("default_order", default="C")
