@@ -93,10 +93,9 @@ functions).
 New in version v0.0.11: `pytblis.contract` fully supports contractions between
 complex and/or real tensors of the same floating point precision, provided that
 `alpha` and `beta` are both real. This just contracts the real and imaginary
-parts separately with TBLIS. It's turned off by default because it's still
-experimental, but you can enable it in `pytblis.contract` and `pytblis.einsum`
-by passing `complex_real_contractions=True`. Otherwise, all mixed-type
-contractions use NumPy.
+parts separately with TBLIS. As of v0.0.14, this feature is enabled by default.
+It can be turned off in `pytblis.contract` and `pytblis.einsum` by passing
+`complex_real_contractions=False`.
 
 ## Installation
 
