@@ -1,0 +1,6 @@
+pytblis 0.0.14
+-------------------------
+* Added
+  - Context manager for default array storage order: `use_default_array_order`
+* Changed
+  - `complex_real_contractions=True` is now enabled by default
