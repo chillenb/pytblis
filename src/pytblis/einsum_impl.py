@@ -26,8 +26,8 @@ from contextlib import nullcontext
 import numpy as np
 
 from .defaultorder import _default_order, get_default_array_order, use_default_array_order
-from .wrappers import contract, transpose_add
 from .numpy_einsumpath import einsum_path
+from .wrappers import contract, transpose_add
 
 
 def einsum(*operands, out=None, optimize=True, complex_real_contractions=True, **kwargs):

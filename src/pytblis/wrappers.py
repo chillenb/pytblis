@@ -317,7 +317,7 @@ def contract(
     if real_scalar_type is None:
         raise TypeError("Input arrays and output array (if provided) must use the same IEEE floating point type.")
 
-    if np.iscomplexobj(a) and np.iscomplexobj(b) or (not np.iscomplexobj(a)) and (not np.iscomplexobj(b)):
+    if (np.iscomplexobj(a) and np.iscomplexobj(b)) or ((not np.iscomplexobj(a)) and (not np.iscomplexobj(b))):
         return contract_same_type(subscripts, a, b, alpha, beta, out, conja, conjb, allow_partial_trace)
 
     # exactly one of a or b is complex, so the result must be complex
