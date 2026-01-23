@@ -310,7 +310,7 @@ def test_einsum(string, dtype):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_einsum_complex_real(string, dtype):
     views = build_views_some_complex(string, dtype=dtype)
-    tblis_result = pytblis.einsum(string, *views, complex_real_contractions=True)
+    tblis_result = pytblis.einsum(string, *views)
     numpy_result = np.einsum(string, *views)
     assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
@@ -467,7 +467,7 @@ def test_contract_mixedtype(string, scalar_types, conja, conjb):
     aifconj = a.conj() if conja else a
     bifconj = b.conj() if conjb else b
     numpy_result = alpha * np.einsum(string, aifconj, bifconj)
-    tblis_result = pytblis.contract(string, a, b, alpha=alpha, conja=conja, conjb=conjb, complex_real_contractions=True)
+    tblis_result = pytblis.contract(string, a, b, alpha=alpha, conja=conja, conjb=conjb)
     assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
 
@@ -491,11 +491,11 @@ def test_contract_mixedtype_alphabeta(string, scalar_type1, scalar_type2, conja,
     if a.real.dtype.type != b.real.dtype.type:
         with pytest.raises(TypeError):
             tblis_result = pytblis.contract(
-                string, a, b, alpha=alpha, beta=beta, out=C, conja=conja, conjb=conjb, complex_real_contractions=True
+                string, a, b, alpha=alpha, beta=beta, out=C, conja=conja, conjb=conjb
             )
         return
     tblis_result = pytblis.contract(
-        string, a, b, alpha=alpha, beta=beta, out=C, conja=conja, conjb=conjb, complex_real_contractions=True
+        string, a, b, alpha=alpha, beta=beta, out=C, conja=conja, conjb=conjb
     )
     assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
     assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
