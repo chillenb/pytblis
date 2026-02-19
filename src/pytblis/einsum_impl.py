@@ -69,8 +69,6 @@ def einsum(*operands, out=None, optimize=True, complex_real_contractions=True, *
         The calculation based on the Einstein summation convention.
     """
     specified_out = out is not None
-    if optimize not in (False, True, "greedy", "optimal"):
-        raise ValueError("optimize must be one of False, True, 'greedy', or 'optimal'")
 
     # Check the kwargs to avoid a more cryptic error later, without having to
     # repeat default values here
