@@ -169,7 +169,8 @@ def contract_same_type(
 
     if not input_strides_ok and not is_trivial:
         warnings.warn(
-            f"Input tensor of shape {a.shape} has non-positive strides: {a.strides}. "
+            f"Input tensors of shape {a.shape}/{b.shape} have non-positive "
+            f"strides: {a.strides}/{b.shape}. "
             "Will attempt to fall back to numpy tensordot.",
             stacklevel=2,
         )
