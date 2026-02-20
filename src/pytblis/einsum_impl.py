@@ -57,10 +57,10 @@ def einsum(*operands, out=None, optimize=True, complex_real_contractions=True, *
         Default is 'C'.
     optimize : {bool, list, tuple, 'greedy', 'optimal'}, default True
         Controls the optimization strategy used to compute the contraction.
-        If a tuple is provided, the second argument is assumed to be 
+        If a tuple is provided, the second argument is assumed to be
         the maximum intermediate size created.
         Also accepts an explicit contraction list from the ``np.einsum_path``
-        function. See ``np.einsum_path`` for more details. 
+        function. See ``np.einsum_path`` for more details.
     complex_real_contractions : bool, default True
         If True, handle contractions between complex and real tensors by performing
         separate contractions for the real and imaginary parts of the complex tensor.
