@@ -11,7 +11,7 @@ def _check_strides(*tensors, out=None):
     Non-contiguity is OK.
     """
     inputs_ok = all(all(s >= 0 for s in tensor.strides) for tensor in tensors)
-    output_ok = (out is None) or all(s > 0 for s in out.strides)
+    output_ok = (out is None) or all(s >= 0 for s in out.strides)
     return inputs_ok, output_ok
 
 
