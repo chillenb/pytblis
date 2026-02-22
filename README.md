@@ -102,9 +102,9 @@ packages may be downloaded from my personal channel.
 conda install pytblis -c conda-forge -c chillenb
 ```
 
-The pre-built wheels on PyPI use pthreads for multithreading. To reduce the
-overhead due to creating and joining threads, compile pytblis yourself and
-configure it to use OpenMP, or use the conda packages.
+The pre-built Mac OS wheels on PyPI use pthreads for multithreading. The Linux
+wheels now use OpenMP, which is much more efficient. Mac users who want OpenMP
+should install from source or use the conda packages.
 
 `pip install pytblis` (not as performant)
 
