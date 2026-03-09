@@ -34,7 +34,7 @@ jobs:
       - name: Build SDist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: cibw-sdist
           path: dist/*.tar.gz
@@ -92,7 +92,7 @@ jobs:
           submodules: recursive
       - uses: astral-sh/setup-uv@v7
 
-      - uses: pypa/cibuildwheel@v3.3.1
+      - uses: pypa/cibuildwheel@v3.4.0
         env:
           CIBW_BEFORE_ALL:
             bash {project}/scripts/cibw_before_all.sh ${{
@@ -116,7 +116,7 @@ jobs:
         if: ${{ inputs.debug_enabled && failure() }}
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: wheelhouse/*.whl
